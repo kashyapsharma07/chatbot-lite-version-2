@@ -3,7 +3,7 @@ services:
     name: ckpcet-chatbot
     env: python
     buildCommand: ./render-build.sh
-    startCommand: gunicorn --chdir backend app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --chdir backend app:app
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
