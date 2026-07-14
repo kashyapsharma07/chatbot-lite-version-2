@@ -4,7 +4,6 @@ import os
 import time
 import random
 from typing import Any
-from sentence_transformers import SentenceTransformer
 from groq import Groq
 from openai import OpenAI          # DeepSeek uses OpenAI-compatible SDK
 # pyrefly: ignore [missing-import]
@@ -22,9 +21,18 @@ from utils import (
 
 class RAGEngine:
     def __init__(self):
-        print("🔄 Loading sentence transformer model...")
-        self.embedding_model = SentenceTransformer(Config.EMBEDDING_MODEL)
-        print("✅ Model loaded!")
+        # Initialize OpenRouter client for embeddings
+        print("🔄 Initializing OpenRouter embedding client...")
+        self.embedding_client = OpenAI(
+            api_key=Config.OPENROUTER_API_KEY,
+            base_url=Config.OPENROUTER_BASE_URL,
+            default_headers={
+                "HTTP-Referer": "https://ckpcmc.org",
+                "X-Title": "CKPCMC Chatbot",
+            },
+        )
+        self.embedding_model_name = "openai/text-embedding-3-small"
+        print("✅ Embedding client ready!")
 
         # Initialize the active LLM client
         self.client: Any
@@ -136,7 +144,7 @@ class RAGEngine:
         for category, suggs in self.follow_up_suggestions.items():
             kb_questions.extend(suggs)
         kb_questions = list(set(kb_questions))
-        self.guardrail = InputGuardrail(self.embedding_model, kb_questions)
+        self.guardrail = InputGuardrail(self._get_embeddings_api, kb_questions)
 
         self.system_prompt = """You are the official CKPCMC Assistant, a premium AI representative of C. K. Pithawalla College of Commerce – Management – Computer Application (CKPCMC), Surat.
 
@@ -181,6 +189,24 @@ KNOWLEDGE BASE PRIORITY:
             print(f"❌ Error: Invalid JSON in {Config.DATASET_PATH}")
             return []
 
+    def _get_embeddings_api(self, texts):
+        """Helper to get embeddings from OpenRouter API"""
+        if isinstance(texts, str):
+            texts = [texts]
+        # Clean any empty/none values
+        texts = [t if t else " " for t in texts]
+        
+        try:
+            response = self.embedding_client.embeddings.create(
+                model=self.embedding_model_name,
+                input=texts
+            )
+            return np.array([item.embedding for item in response.data], dtype=np.float32)
+        except Exception as e:
+            print(f"❌ Error getting embeddings from API: {e}")
+            # Fallback to zero vector of 1536 dims on API failure
+            return np.zeros((len(texts), 1536), dtype=np.float32)
+
     def _create_embeddings(self):
         """Create embeddings for all knowledge base entries using Questions and Keywords only"""
         texts = []
@@ -189,7 +215,7 @@ KNOWLEDGE BASE PRIORITY:
             kw = " ".join(item.get("keywords", []))
             texts.append(f"{q} {kw}")
 
-        return self.embedding_model.encode(texts, show_progress_bar=True)
+        return self._get_embeddings_api(texts)
 
     def _retrieve_context(self, query, top_k=None):
         """Retrieve relevant context using semantic search"""
@@ -198,7 +224,7 @@ KNOWLEDGE BASE PRIORITY:
 
         start_time = time.time()
 
-        query_embedding = self.embedding_model.encode([query])[0]
+        query_embedding = self._get_embeddings_api(query)[0]
 
         similarities = np.dot(self.embeddings, query_embedding) / (
             np.linalg.norm(self.embeddings, axis=1) * np.linalg.norm(query_embedding)

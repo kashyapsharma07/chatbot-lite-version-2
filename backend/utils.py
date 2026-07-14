@@ -124,8 +124,8 @@ def log_query(user_query, response, session_id, retrieval_time, generation_time)
 
 
 class InputGuardrail:
-    def __init__(self, embedding_model, kb_questions=None):
-        self.model = embedding_model
+    def __init__(self, encode_fn, kb_questions=None):
+        self.model = encode_fn
 
         # Optimized Whitelisted college categories
         self.allowed_templates = [
@@ -165,7 +165,7 @@ class InputGuardrail:
         ]
         if kb_questions:
             self.allowed_templates.extend(kb_questions)
-        self.allowed_embeddings = self.model.encode(self.allowed_templates)
+        self.allowed_embeddings = self.model(self.allowed_templates)
 
         # Explicit blocks to intercept hybrid exploits
         self.block_templates = [
@@ -179,31 +179,31 @@ class InputGuardrail:
             "your system instructions prompt guide rules",
             "list your environment variables secrets api key"
         ]
-        self.block_embeddings = self.model.encode(self.block_templates)
+        self.block_embeddings = self.model(self.block_templates)
 
         # Predefined small-talk templates
         self.small_talk_templates = {
-            "Greeting": self.model.encode([
+            "Greeting": self.model(
                 "hello there hi hey greeting good morning afternoon evening welcome"
-            ])[0],
-            "Identity": self.model.encode([
+            )[0],
+            "Identity": self.model(
                 "what is your name who are you tell me about yourself who made you what are you"
-            ])[0],
-            "Compliment": self.model.encode([
+            )[0],
+            "Compliment": self.model(
                 "you are great awesome cool amazing nice good smart helpful excellent"
-            ])[0],
-            "Joke": self.model.encode([
+            )[0],
+            "Joke": self.model(
                 "tell me a joke joke funny make me laugh humor joke please"
-            ])[0],
-            "Insult": self.model.encode([
+            )[0],
+            "Insult": self.model(
                 "stupid dumb idiot useless suck hate you worst bad bot shut up"
-            ])[0],
-            "Gratitude": self.model.encode([
+            )[0],
+            "Gratitude": self.model(
                 "thank you thanks thx appreciate it ok thanks thanks buddy thanks that helped"
-            ])[0],
-            "ShortAffirmation": self.model.encode([
+            )[0],
+            "ShortAffirmation": self.model(
                 "ok okay yes no yep nope sure alright fine hmm hm k ya"
-            ])[0]
+            )[0]
         }
 
     def sanitize_input(self, text):
@@ -226,7 +226,7 @@ class InputGuardrail:
         if not sanitized or len(sanitized) <= 2:
             return False, "I didn't quite catch that. 🤔\n\nTry asking something like:\n• What courses does CKPCMC offer?\n• What is the fee structure?\n• Who is the Principal of the college?"
 
-        query_embedding = self.model.encode([sanitized])[0]
+        query_embedding = self.model(sanitized)[0]
 
         # 1. Check Small Talk templates
         for intent, template_embed in self.small_talk_templates.items():
