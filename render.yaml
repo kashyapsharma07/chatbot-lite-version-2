@@ -2,8 +2,17 @@ services:
   - type: web
     name: ckpcet-chatbot
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    buildCommand: ./render-build.sh
+    startCommand: gunicorn --chdir backend app:app
     envVars:
-      - key: OPENAI_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
+      - key: OPENROUTER
+        value: ON
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ
+        value: OFF
+      - key: FLASK_ENV
+        value: production
+
