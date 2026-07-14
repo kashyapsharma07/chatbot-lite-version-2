@@ -1,0 +1,2 @@
+# Pyrefly Configuration File
+python-interpreter-path = ".venv/bin/python"
