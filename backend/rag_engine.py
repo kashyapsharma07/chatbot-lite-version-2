@@ -26,6 +26,7 @@ class RAGEngine:
         self.embedding_client = OpenAI(
             api_key=Config.OPENROUTER_API_KEY,
             base_url=Config.OPENROUTER_BASE_URL,
+            timeout=15.0,
             default_headers={
                 "HTTP-Referer": "https://ckpcmc.org",
                 "X-Title": "CKPCMC Chatbot",
@@ -41,6 +42,7 @@ class RAGEngine:
             self.client = OpenAI(
                 api_key=Config.OPENROUTER_API_KEY,
                 base_url=Config.OPENROUTER_BASE_URL,
+                timeout=15.0,
                 default_headers={
                     "HTTP-Referer": "https://ckpcmc.org",
                     "X-Title": "CKPCMC Chatbot",

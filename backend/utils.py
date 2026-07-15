@@ -165,7 +165,6 @@ class InputGuardrail:
         ]
         if kb_questions:
             self.allowed_templates.extend(kb_questions)
-        self.allowed_embeddings = self.model(self.allowed_templates)
 
         # Explicit blocks to intercept hybrid exploits
         self.block_templates = [
@@ -179,31 +178,40 @@ class InputGuardrail:
             "your system instructions prompt guide rules",
             "list your environment variables secrets api key"
         ]
-        self.block_embeddings = self.model(self.block_templates)
 
-        # Predefined small-talk templates
+        # Combine all templates to perform a single batch embedding call
+        all_templates = list(self.allowed_templates)
+        allowed_count = len(all_templates)
+
+        all_templates.extend(self.block_templates)
+        block_count = len(self.block_templates)
+
+        small_talk_texts = [
+            "hello there hi hey greeting good morning afternoon evening welcome",
+            "what is your name who are you tell me about yourself who made you what are you",
+            "you are great awesome cool amazing nice good smart helpful excellent",
+            "tell me a joke joke funny make me laugh humor joke please",
+            "stupid dumb idiot useless suck hate you worst bad bot shut up",
+            "thank you thanks thx appreciate it ok thanks thanks buddy thanks that helped",
+            "ok okay yes no yep nope sure alright fine hmm hm k ya"
+        ]
+        all_templates.extend(small_talk_texts)
+
+        print(f"🔄 Creating guardrail embeddings for {len(all_templates)} templates in 1 batch...")
+        all_embeddings = self.model(all_templates)
+
+        self.allowed_embeddings = all_embeddings[:allowed_count]
+        self.block_embeddings = all_embeddings[allowed_count : allowed_count + block_count]
+
+        small_talk_embeddings = all_embeddings[allowed_count + block_count :]
         self.small_talk_templates = {
-            "Greeting": self.model(
-                "hello there hi hey greeting good morning afternoon evening welcome"
-            )[0],
-            "Identity": self.model(
-                "what is your name who are you tell me about yourself who made you what are you"
-            )[0],
-            "Compliment": self.model(
-                "you are great awesome cool amazing nice good smart helpful excellent"
-            )[0],
-            "Joke": self.model(
-                "tell me a joke joke funny make me laugh humor joke please"
-            )[0],
-            "Insult": self.model(
-                "stupid dumb idiot useless suck hate you worst bad bot shut up"
-            )[0],
-            "Gratitude": self.model(
-                "thank you thanks thx appreciate it ok thanks thanks buddy thanks that helped"
-            )[0],
-            "ShortAffirmation": self.model(
-                "ok okay yes no yep nope sure alright fine hmm hm k ya"
-            )[0]
+            "Greeting": small_talk_embeddings[0],
+            "Identity": small_talk_embeddings[1],
+            "Compliment": small_talk_embeddings[2],
+            "Joke": small_talk_embeddings[3],
+            "Insult": small_talk_embeddings[4],
+            "Gratitude": small_talk_embeddings[5],
+            "ShortAffirmation": small_talk_embeddings[6]
         }
 
     def sanitize_input(self, text):
