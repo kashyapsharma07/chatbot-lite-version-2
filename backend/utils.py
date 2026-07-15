@@ -216,6 +216,44 @@ class InputGuardrail:
         cleaned = re.sub(r"<[^>]*>", "", truncated)
         return cleaned
 
+    def _levenshtein_distance(self, s1, s2):
+        """Standard Levenshtein distance algorithm (edit distance)"""
+        if len(s1) < len(s2):
+            return self._levenshtein_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+
+        return previous_row[-1]
+
+    def _has_fuzzy_keyword_match(self, query_words, keywords):
+        """Checks if any word in query matches an on-topic keyword within edit distance tolerance"""
+        for q_word in query_words:
+            if len(q_word) < 3:
+                continue
+            for kw in keywords:
+                # Acceptable edit distance threshold based on word length
+                if len(q_word) <= 4:
+                    threshold = 1
+                elif len(q_word) <= 6:
+                    threshold = 2
+                else:
+                    threshold = 3
+                
+                if self._levenshtein_distance(q_word, kw) <= threshold:
+                    print(f"🛡️ Guardrail: Fuzzy Keyword Match Found! ('{q_word}' matched '{kw}')")
+                    return True
+        return False
+
     def check_guardrails(self, query):
         """
         Classifies intent and checks safety.
@@ -289,9 +327,12 @@ class InputGuardrail:
                 "phone", "email", "address", "location"
             }
             query_words = set(re.findall(r"\b\w+\b", sanitized.lower()))
+            # Exact intersection check first (fastest)
             if not (query_words & on_topic_keywords):
-                print(f"🛡️ Guardrail: Off-Topic Query Blocked (Similarity: {max_allowed_sim:.4f})")
-                return False, "I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
+                # Fallback to fuzzy spelling matching
+                if not self._has_fuzzy_keyword_match(query_words, on_topic_keywords):
+                    print(f"🛡️ Guardrail: Off-Topic Query Blocked (Similarity: {max_allowed_sim:.4f})")
+                    return False, "I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
 
         return True, None
 
