@@ -412,6 +412,11 @@ export default function App() {
       localStorage.setItem("isTtsEnabled", String(next));
       if (!next) {
         speechManagerRef.current?.cancel();
+      } else {
+        // Unlock SpeechSynthesis on mobile immediately inside user click thread
+        const unlock = new SpeechSynthesisUtterance("");
+        unlock.volume = 0;
+        window.speechSynthesis.speak(unlock);
       }
       return next;
     });
@@ -426,6 +431,13 @@ export default function App() {
       setInput("");
       setShowFAQs(false);
       speechManagerRef.current?.cancel(); // stop any ongoing speech
+
+      // Unlock SpeechSynthesis on mobile immediately inside user interaction event thread
+      if (isTtsEnabled || forceTts) {
+        const unlock = new SpeechSynthesisUtterance("");
+        unlock.volume = 0;
+        window.speechSynthesis.speak(unlock);
+      }
 
       // Stop voice listening if active
       if (recognitionRef.current && isListening) {
@@ -590,6 +602,10 @@ export default function App() {
       recognitionRef.current.stop();
     } else {
       speechManagerRef.current?.cancel();
+      // Unlock SpeechSynthesis on mobile immediately inside user click thread
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
       recognitionRef.current.start();
     }
   };
@@ -633,15 +649,15 @@ export default function App() {
               Your intelligent assistant for admissions, fees, courses,
               and student activities — available 24 × 7.
             </p>
-            <button style={styles.heroCTA} onClick={() => setOpen(true)}>
+            <button className="hero-cta" style={styles.heroCTA} onClick={() => setOpen(true)}>
               💬 Chat with CKPCMC Bot
             </button>
           </div>
-          <div style={styles.heroCard}>
+          <div className="hero-card" style={styles.heroCard}>
             <div style={styles.cardStat}><span style={styles.cardNum}>3 UG</span><span style={styles.cardLbl}>Programs</span></div>
-            <div style={styles.cardDivider} />
+            <div className="card-divider" style={styles.cardDivider} />
             <div style={styles.cardStat}><span style={styles.cardNum}>8 AM - 2 PM</span><span style={styles.cardLbl}>Timings</span></div>
-            <div style={styles.cardDivider} />
+            <div className="card-divider" style={styles.cardDivider} />
             <div style={styles.cardStat}><span style={styles.cardNum}>VNSGU</span><span style={styles.cardLbl}>Affiliated</span></div>
           </div>
         </main>
@@ -663,7 +679,7 @@ export default function App() {
 
       {/* ── Floating Toggle ──────────────────────────────────────── */}
       <button
-        style={{ ...styles.fab, ...(open ? styles.fabOpen : {}) }}
+        className={`chat-fab ${open ? "open" : ""}`}
         onClick={() => setOpen((o) => !o)}
         aria-label="Toggle chat"
       >
@@ -671,7 +687,7 @@ export default function App() {
       </button>
 
       {/* ── Chat Widget ──────────────────────────────────────────── */}
-      <div style={{ ...styles.widget, ...(open ? styles.widgetOpen : {}) }} aria-hidden={!open}>
+      <div className={`chat-widget ${open ? "open" : ""}`} aria-hidden={!open}>
 
         {/* Header */}
         <div style={styles.widgetHeader}>
@@ -736,6 +752,7 @@ export default function App() {
         <div style={styles.inputRow}>
           <input
             ref={inputRef}
+            className="chat-input"
             style={styles.inputField}
             value={input}
             placeholder="Ask about B.Com, BBA, BCA…"
@@ -811,13 +828,7 @@ const styles = {
   // Footer
   footer: { textAlign: "center", padding: "20px", color: "#888", fontSize: 13, marginTop: "auto" },
 
-  // FAB
-  fab: { position: "fixed", bottom: 24, right: 24, width: 56, height: 56, borderRadius: "50%", background: `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, color: "white", fontSize: 22, border: "none", cursor: "pointer", zIndex: 9999, boxShadow: "0 8px 28px rgba(2,43,90,0.4)", transition: "all 0.3s ease", display: "flex", alignItems: "center", justifyContent: "center" },
-  fabOpen: { background: "#555" },
-
-  // Widget
-  widget: { position: "fixed", bottom: 92, right: 24, width: 360, height: 500, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)", borderRadius: 20, boxShadow: "0 24px 60px rgba(0,0,0,0.22)", display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 9998, opacity: 0, transform: "translateY(40px) scale(0.92)", pointerEvents: "none", transition: "all 0.35s cubic-bezier(0.25,0.8,0.25,1)" },
-  widgetOpen: { opacity: 1, transform: "translateY(0) scale(1)", pointerEvents: "auto" },
+  // FAB and Widget are styled via globalCSS for mobile responsiveness and performance
 
   // Widget Header
   widgetHeader: { background: `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, color: "white", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" },
@@ -869,4 +880,123 @@ const globalCSS = `
   body { background: #f4f6fb; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 10px; }
+
+  /* Floating Action Button (FAB) */
+  .chat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #da1039, #6d061a);
+    color: white;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(218, 16, 57, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+  }
+  .chat-fab:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 40px rgba(218, 16, 57, 0.45);
+  }
+  .chat-fab:active {
+    transform: scale(0.95);
+  }
+  .chat-fab.open {
+    background: #333;
+    transform: rotate(90deg);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+
+  /* Chat Widget Container */
+  .chat-widget {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    width: 380px;
+    height: 600px;
+    max-height: calc(100vh - 140px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9998;
+    opacity: 0;
+    transform: scale(0.1);
+    transform-origin: bottom right;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+  }
+  .chat-widget.open {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  /* Input fields focusing */
+  .chat-input {
+    transition: all 0.2s ease;
+    border: 1px solid transparent !important;
+  }
+  .chat-input:focus {
+    background: white !important;
+    border-color: rgba(218, 16, 57, 0.3) !important;
+    box-shadow: 0 0 0 3px rgba(218, 16, 57, 0.1) !important;
+  }
+
+  /* Hero button hover scale */
+  .hero-cta {
+    transition: all 0.2s ease;
+  }
+  .hero-cta:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+  }
+  .hero-cta:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  /* Responsive styling for hero card stats */
+  @media (max-width: 600px) {
+    .hero-card {
+      flex-direction: column !important;
+      gap: 16px !important;
+      padding: 20px 24px !important;
+      width: 100% !important;
+    }
+    .card-divider {
+      width: 100% !important;
+      height: 1px !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+    }
+  }
+
+  /* Responsive mobile adjustments for chat widget */
+  @media (max-width: 480px) {
+    .chat-widget {
+      bottom: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      border-radius: 0 !important;
+      border: none !important;
+      z-index: 10000 !important;
+      transform-origin: bottom right;
+    }
+    .chat-widget.open {
+      transform: scale(1) !important;
+    }
+  }
 `;
