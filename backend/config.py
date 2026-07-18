@@ -1,5 +1,6 @@
 import os
 import time
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
 # Load environment variables from .env file in the backend directory

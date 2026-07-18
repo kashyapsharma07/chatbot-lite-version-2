@@ -216,10 +216,12 @@ class SpeechQueueManager {
 
     // Skip to the next sentence if an error occurs to prevent getting stuck
     utterance.onerror = (e) => {
-      console.error("SpeechSynthesis error:", e);
-      if (this.currentUtterance === utterance) {
-        this.currentIndex++;
-        this.speakNext();
+      if (e.error !== "interrupted") {
+        console.error("SpeechSynthesis error:", e);
+        if (this.currentUtterance === utterance) {
+          this.currentIndex++;
+          this.speakNext();
+        }
       }
     };
 
@@ -372,6 +374,10 @@ export default function App() {
   const [isTtsEnabled, setIsTtsEnabled] = useState(() => {
     return localStorage.getItem("isTtsEnabled") === "true";
   });
+  const isTtsEnabledRef = useRef(isTtsEnabled);
+  useEffect(() => {
+    isTtsEnabledRef.current = isTtsEnabled;
+  }, [isTtsEnabled]);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -433,7 +439,7 @@ export default function App() {
       speechManagerRef.current?.cancel(); // stop any ongoing speech
 
       // Unlock SpeechSynthesis on mobile immediately inside user interaction event thread
-      if (isTtsEnabled || forceTts) {
+      if (isTtsEnabledRef.current) {
         const unlock = new SpeechSynthesisUtterance("");
         unlock.volume = 0;
         window.speechSynthesis.speak(unlock);
@@ -529,8 +535,8 @@ export default function App() {
           }
         }
 
-        // Trigger TTS if enabled or forced
-        if (isTtsEnabled || forceTts) {
+        // Trigger TTS if enabled
+        if (isTtsEnabledRef.current) {
           speechManagerRef.current?.speak(accumulatedContent);
         }
 
@@ -576,7 +582,7 @@ export default function App() {
       rec.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
-          sendMessageRef.current(transcript, true);
+          sendMessageRef.current(transcript, isTtsEnabledRef.current);
         }
       };
 

@@ -6,6 +6,7 @@ import json
 import os
 from glob import glob
 
+# pyrefly: ignore [missing-import]
 from config import Config
 
 
