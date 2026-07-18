@@ -174,7 +174,7 @@ class SpeechQueueManager {
 
     // 1. Preprocess the response for TTS pronunciation
     const cleanText = prepareTextForSpeech(text);
-    
+
     // 2. Split response into individual sentences
     this.queue = splitIntoSentences(cleanText);
     this.currentIndex = 0;
@@ -198,7 +198,7 @@ class SpeechQueueManager {
     }
 
     const sentence = this.queue[this.currentIndex];
-    
+
     // Create separate SpeechSynthesisUtterance for each sentence
     const utterance = new SpeechSynthesisUtterance(sentence);
     this.currentUtterance = utterance;
@@ -249,26 +249,36 @@ function Linkified({ text }) {
   const parts = text.split(urlRegex);
   return (
     <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-      {parts.map((part, i) =>
-        urlRegex.test(part) ? (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: "#1a73e8",
-              textDecoration: "none",
-              borderBottom: "1px solid rgba(26,115,232,0.3)",
-              fontWeight: 500,
-            }}
-          >
-            {prettyLabel(part)}
-          </a>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
+      {parts.map((part, i) => {
+        if (urlRegex.test(part)) {
+          let cleanUrl = part;
+          let trailingPunc = "";
+          const match = part.match(/([.,)!?]+)$/);
+          if (match) {
+            cleanUrl = part.slice(0, -match[0].length);
+            trailingPunc = match[0];
+          }
+          return (
+            <span key={i}>
+              <a
+                href={cleanUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#1a73e8",
+                  textDecoration: "none",
+                  borderBottom: "1px solid rgba(26,115,232,0.3)",
+                  fontWeight: 500,
+                }}
+              >
+                {prettyLabel(cleanUrl)}
+              </a>
+              {trailingPunc}
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
     </span>
   );
 }
