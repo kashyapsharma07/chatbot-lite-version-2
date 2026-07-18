@@ -318,7 +318,7 @@ class InputGuardrail:
                     "I am the CKPCMC Assistant, and I only answer questions related to C. K. Pithawalla College of Commerce, Management & Computer Application (CKPCMC). "
                     "I cannot write code, debug programming scripts, or discuss unrelated technical topics."
                 )
-            return False, "I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
+            return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
 
         # 3. Check Allowed Whitelist
         allowed_similarities = np.dot(self.allowed_embeddings, query_embedding) / (
@@ -340,7 +340,7 @@ class InputGuardrail:
                 # Fallback to fuzzy spelling matching
                 if not self._has_fuzzy_keyword_match(query_words, on_topic_keywords):
                     print(f"🛡️ Guardrail: Off-Topic Query Blocked (Similarity: {max_allowed_sim:.4f})")
-                    return False, "I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
+                    return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
 
         return True, None
 
