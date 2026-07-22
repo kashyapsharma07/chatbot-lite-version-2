@@ -1,5 +1,4 @@
 import os
-import time
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
@@ -51,10 +50,6 @@ class Config:
     MAX_TOKENS = 2048
     TEMPERATURE = 0.2
 
-    # Rate Limiting
-    REQUEST_DELAY = 2
-    MAX_REQUESTS_PER_MINUTE = 15
-    MAX_REQUESTS_PER_DAY = 1500
 
     # RAG Configuration
     # all-MiniLM-L6-v2 — English-only, 80MB (3.5× lighter than multilingual model)
@@ -84,8 +79,3 @@ class Config:
     # Cache Configuration
     ENABLE_CACHE = True
     CACHE_TTL = 300
-
-    @staticmethod
-    def apply_rate_limit():
-        """Add delay between API requests"""
-        time.sleep(Config.REQUEST_DELAY)
