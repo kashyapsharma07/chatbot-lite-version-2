@@ -359,10 +359,12 @@ KNOWLEDGE BASE PRIORITY:
                 return
 
             # Run Secure Guardrails (Semantic Intent Classifier & Input Gating)
-            is_safe, guardrail_response = self.guardrail.check_guardrails(user_input)
+            is_safe, guardrail_response, closest_match = self.guardrail.check_guardrails(user_input)
             if not is_safe:
                 self._update_history(session_id, user_input, guardrail_response)
                 yield {"type": "content", "content": guardrail_response}
+                if closest_match:
+                    yield {"type": "did_you_mean", "question": closest_match}
                 yield {"type": "suggestions", "suggestions": default_suggestions}
                 yield {"type": "done"}
                 return
@@ -424,6 +426,10 @@ KNOWLEDGE BASE PRIORITY:
 
             if Config.ENABLE_LOGGING:
                 log_query(user_input, response, session_id, retrieval_time, generation_time)
+
+            # If query had zero contexts or returned fallback response, attach closest match suggestion
+            if (len(context) == 0 or "don't have that information" in response) and closest_match:
+                yield {"type": "did_you_mean", "question": closest_match}
 
             yield {"type": "suggestions", "suggestions": english_suggestions}
             yield {"type": "done"}

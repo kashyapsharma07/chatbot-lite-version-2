@@ -322,6 +322,26 @@ function MessageBubble({ msg, onSuggestionClick }) {
           )}
         </div>
       )}
+      {/* Did You Mean card */}
+      {!isUser && msg.didYouMean && (
+        <div style={styles.didYouMeanCard}>
+          <span style={{ fontSize: "12px", color: "#666" }}>💡 Did you mean:</span>
+          <button
+            onClick={() => onSuggestionClick?.(msg.didYouMean)}
+            style={styles.didYouMeanButton}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(218,16,57,0.12)";
+              e.currentTarget.style.borderColor = "#da1039";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(218,16,57,0.06)";
+              e.currentTarget.style.borderColor = "rgba(218,16,57,0.2)";
+            }}
+          >
+            "{msg.didYouMean}"?
+          </button>
+        </div>
+      )}
       {/* Suggestion chips below bot messages */}
       {!isUser && msg.suggestions?.length > 0 && (
         <div style={styles.suggestionsRow}>
@@ -389,6 +409,9 @@ export default function App() {
     isTtsEnabledRef.current = isTtsEnabled;
   }, [isTtsEnabled]);
 
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const speechManagerRef = useRef(null);
@@ -421,6 +444,35 @@ export default function App() {
     if (open) setTimeout(() => inputRef.current?.focus(), 200);
   }, [open]);
 
+  // Debounced Autocomplete Fetcher
+  useEffect(() => {
+    if (!input.trim() || input.trim().length < 2) {
+      setAutocompleteSuggestions([]);
+      setShowAutocomplete(false);
+      return;
+    }
+
+    const delayDebounce = setTimeout(() => {
+      fetch(`/api/autocomplete?q=${encodeURIComponent(input.trim())}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.suggestions && data.suggestions.length > 0) {
+            setAutocompleteSuggestions(data.suggestions);
+            setShowAutocomplete(true);
+          } else {
+            setAutocompleteSuggestions([]);
+            setShowAutocomplete(false);
+          }
+        })
+        .catch(() => {
+          setAutocompleteSuggestions([]);
+          setShowAutocomplete(false);
+        });
+    }, 200);
+
+    return () => clearTimeout(delayDebounce);
+  }, [input]);
+
   // Toggle TTS
   const toggleTts = () => {
     setIsTtsEnabled((prev) => {
@@ -446,6 +498,8 @@ export default function App() {
 
       setInput("");
       setShowFAQs(false);
+      setAutocompleteSuggestions([]);
+      setShowAutocomplete(false);
       speechManagerRef.current?.cancel(); // stop any ongoing speech
 
       // Unlock SpeechSynthesis on mobile immediately inside user interaction event thread
@@ -509,6 +563,18 @@ export default function App() {
                       next[next.length - 1] = {
                         ...next[next.length - 1],
                         suggestions: suggestions,
+                      };
+                    }
+                    return next;
+                  });
+                } else if (event.type === "did_you_mean") {
+                  const didYouMeanQ = event.question;
+                  setMessages((prev) => {
+                    const next = [...prev];
+                    if (next.length > 0) {
+                      next[next.length - 1] = {
+                        ...next[next.length - 1],
+                        didYouMean: didYouMeanQ,
                       };
                     }
                     return next;
@@ -798,6 +864,29 @@ export default function App() {
             ➤
           </button>
         </div>
+
+        {/* Autocomplete dropdown suggestions */}
+        {showAutocomplete && autocompleteSuggestions.length > 0 && (
+          <div style={styles.autocompleteContainer}>
+            {autocompleteSuggestions.map((s, idx) => (
+              <div
+                key={idx}
+                style={styles.autocompleteItem}
+                onClick={() => {
+                  sendMessage(s);
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(218,16,57,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "white";
+                }}
+              >
+                🔍 {s}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
@@ -881,6 +970,54 @@ const styles = {
   // Follow-up suggestions
   suggestionsRow: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, maxWidth: "85%" },
   suggestionChip: { background: "rgba(218,16,57,0.05)", border: "1px solid rgba(218,16,57,0.2)", borderRadius: 16, padding: "5px 12px", fontSize: 12, color: "#444", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit", lineHeight: 1.4 },
+
+  // Autocomplete suggestions
+  autocompleteContainer: {
+    position: "absolute",
+    bottom: "64px",
+    left: "14px",
+    right: "14px",
+    background: "white",
+    border: "1px solid rgba(218,16,57,0.15)",
+    borderRadius: "16px",
+    boxShadow: "0 -8px 24px rgba(218,16,57,0.06), 0 8px 24px rgba(0,0,0,0.08)",
+    zIndex: 1000,
+    maxHeight: "180px",
+    overflowY: "auto",
+    padding: "6px 0",
+  },
+  autocompleteItem: {
+    padding: "8px 14px",
+    fontSize: "13px",
+    color: "#333",
+    cursor: "pointer",
+    textAlign: "left",
+    transition: "background 0.15s ease",
+    borderBottom: "1px solid #f2f4f8",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+
+  // Did you mean card
+  didYouMeanCard: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 4,
+  },
+  didYouMeanButton: {
+    background: "rgba(218,16,57,0.06)",
+    border: "1px solid rgba(218,16,57,0.2)",
+    color: "#da1039",
+    padding: "4px 10px",
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "all 0.15s ease",
+  },
 };
 
 const globalCSS = `

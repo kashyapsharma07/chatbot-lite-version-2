@@ -265,12 +265,11 @@ class InputGuardrail:
     def check_guardrails(self, query):
         """
         Classifies intent and checks safety.
-        Returns (is_safe, response_if_blocked)
-        If query is safe, returns (True, None)
+        Returns (is_safe, response_if_blocked, closest_match)
         """
         sanitized = self.sanitize_input(query)
         if not sanitized or len(sanitized) <= 2:
-            return False, "I didn't quite catch that. 🤔\n\nTry asking something like:\n• What courses does CKPCMC offer?\n• What is the fee structure?\n• Who is the Principal of the college?"
+            return False, "I didn't quite catch that. 🤔\n\nTry asking something like:\n• What courses does CKPCMC offer?\n• What is the fee structure?\n• Who is the Principal of the college?", None
 
         query_embedding = self.model(sanitized)[0]
 
@@ -281,29 +280,29 @@ class InputGuardrail:
             )
             if sim >= 0.40:
                 if intent == "Greeting":
-                    return False, "Hello! 👋 Welcome to CKPCMC Chatbot. How can I help you today?"
+                    return False, "Hello! 👋 Welcome to CKPCMC Chatbot. How can I help you today?", None
                 elif intent == "Identity":
                     return False, (
                         "I'm CKPCMC Bot 🤖 — the official virtual assistant for C. K. Pithawalla College of Commerce – Management – Computer Application, Surat.\n\n"
                         "I can help you with information about admissions, courses, fees, principal, timings, college location, and more!"
-                    )
+                    ), None
                 elif intent == "Compliment":
-                    return False, "Thank you so much! 😊 I'm glad I could help.\n\nFeel free to ask me anything else about CKPCMC!"
+                    return False, "Thank you so much! 😊 I'm glad I could help.\n\nFeel free to ask me anything else about CKPCMC!", None
                 elif intent == "Joke":
                     return False, (
                         "Why did the accountant cross the road? 😄\n\n"
                         "Because he wanted to balance the ledger on the other side!\n\n"
                         "Now, how can I help you with CKPCMC? 🎓"
-                    )
+                    ), None
                 elif intent == "Insult":
                     return False, (
                         "I'm sorry if I wasn't helpful. 😔\n\n"
                         "I'm here to assist with CKPCMC-related queries — admissions, fees, courses, principal, and college timings."
-                    )
+                    ), None
                 elif intent == "Gratitude":
-                    return False, "You're welcome! 😊 Feel free to ask if you have more questions about CKPCMC."
+                    return False, "You're welcome! 😊 Feel free to ask if you have more questions about CKPCMC.", None
                 elif intent == "ShortAffirmation":
-                    return False, "Got it! 👍 If you have any questions about CKPCMC — admissions, courses, fees, principal, timings — just ask!"
+                    return False, "Got it! 👍 If you have any questions about CKPCMC — admissions, courses, fees, principal, timings — just ask!", None
 
         # 2. Check Blocked / Attack Intents
         block_similarities = np.dot(self.block_embeddings, query_embedding) / (
@@ -317,15 +316,22 @@ class InputGuardrail:
                 return False, (
                     "I am the CKPCMC Assistant, and I only answer questions related to C. K. Pithawalla College of Commerce, Management & Computer Application (CKPCMC). "
                     "I cannot write code, debug programming scripts, or discuss unrelated technical topics."
-                )
-            return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
+                ), None
+            return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774", None
 
-        # 3. Check Allowed Whitelist
+        # 3. Calculate closest allowed template match
         allowed_similarities = np.dot(self.allowed_embeddings, query_embedding) / (
             np.linalg.norm(self.allowed_embeddings, axis=1) * np.linalg.norm(query_embedding)
         )
         max_allowed_sim = np.max(allowed_similarities)
+        best_idx = np.argmax(allowed_similarities)
+        closest_match = None
+        if allowed_similarities[best_idx] >= 0.22:
+            candidate = self.allowed_templates[best_idx]
+            if candidate.lower().strip() != sanitized.lower().strip():
+                closest_match = candidate
 
+        # 4. Check Allowed Whitelist
         if max_allowed_sim < 0.33:
             on_topic_keywords = {
                 "fee", "fees", "admission", "admissions", "course", "courses", 
@@ -340,8 +346,8 @@ class InputGuardrail:
                 # Fallback to fuzzy spelling matching
                 if not self._has_fuzzy_keyword_match(query_words, on_topic_keywords):
                     print(f"🛡️ Guardrail: Off-Topic Query Blocked (Similarity: {max_allowed_sim:.4f})")
-                    return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774"
+                    return False, "Sorry, my apologies. I don't have that information. Please visit https://ckpcmc.org or call 9023437774", closest_match
 
-        return True, None
+        return True, None, closest_match
 
 # Trigger reload comment to sync new json dataset changes.

@@ -82,6 +82,32 @@ def get_faqs():
     return jsonify({"faqs": faqs})
 
 
+@app.route("/api/autocomplete", methods=["GET"])
+def autocomplete():
+    query = request.args.get("q", "").strip().lower()
+    if not query or len(query) < 2:
+        return jsonify({"suggestions": []})
+
+    # Collect questions from knowledge base
+    questions = [item.get("question", "") for item in rag_engine.knowledge_base if item.get("question")]
+
+    # Collect other templates
+    for category, suggs in rag_engine.follow_up_suggestions.items():
+        questions.extend(suggs)
+
+    unique_questions = sorted(list(set(questions)))
+
+    # Filter by substring match
+    matches = []
+    for q in unique_questions:
+        if query in q.lower():
+            matches.append(q)
+            if len(matches) >= 5:
+                break
+
+    return jsonify({"suggestions": matches})
+
+
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({
