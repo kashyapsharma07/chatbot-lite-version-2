@@ -426,8 +426,9 @@ KNOWLEDGE BASE PRIORITY:
             if Config.ENABLE_LOGGING:
                 log_query(user_input, response, session_id, retrieval_time, generation_time)
 
-            # If query had zero contexts or returned fallback response, attach closest match suggestion
-            if (len(context) == 0 or "don't have that information" in response) and closest_match:
+            # Only attach did_you_mean if the final answer is a fallback rejection
+            is_fallback = any(phrase in response.lower() for phrase in ["don't have that information", "my apologies", "apologize", "sorry"])
+            if is_fallback and closest_match:
                 yield {"type": "did_you_mean", "question": closest_match}
 
             yield {"type": "suggestions", "suggestions": english_suggestions}
