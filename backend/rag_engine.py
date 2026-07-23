@@ -392,7 +392,6 @@ KNOWLEDGE BASE PRIORITY:
                 messages=messages,
                 model=self.active_model,
                 temperature=Config.TEMPERATURE,
-                max_tokens=Config.MAX_TOKENS,
                 stream=True
             )
 
