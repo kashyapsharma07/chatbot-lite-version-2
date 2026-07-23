@@ -42,7 +42,7 @@ class Config:
     GROQ_MODEL        = "llama-3.3-70b-versatile"
     GEMINI_MODEL      = "gemini-2.0-flash"
     # OpenRouter model slug — use :free suffix for free tier (rate-limited)
-    OPENROUTER_MODEL  = "meta-llama/llama-3.3-70b-instruct:free"
+    OPENROUTER_MODEL  = "openrouter/free"
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
