@@ -893,27 +893,30 @@ export default function App() {
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-const BLUE = "#da1039"; // Crimson Red
-const BLUE_DARK = "#6d061a"; // Dark Maroon
+const NAVY = "#2d2424"; // Deep Chocolate Navy
+const GOLD = "#d4af37"; // Metallic Gold
+const ACCENT = "#574e45"; // Warm Taupe
+const BG_SAND = "#e9e8e5"; // Warm Sand Background
+const INK = "#3b3131"; // Deep ink text
 
 const styles = {
   // Page
-  page: { minHeight: "100vh", background: "#f4f6fb", fontFamily: "'Segoe UI', sans-serif", display: "flex", flexDirection: "column" },
+  page: { minHeight: "100vh", background: BG_SAND, fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif", display: "flex", flexDirection: "column", color: INK },
 
   // Nav
-  nav: { background: BLUE_DARK, color: "white", padding: "14px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 },
-  navBrand: { fontSize: 22, fontWeight: 800, letterSpacing: 1 },
+  nav: { background: NAVY, color: "white", padding: "14px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100, borderBottom: `2px solid ${GOLD}` },
+  navBrand: { fontSize: 22, fontWeight: 800, letterSpacing: 1, fontFamily: "'Playfair Display', Georgia, serif" },
   navLinks: { display: "flex", gap: 24 },
   navLink: { color: "rgba(255,255,255,0.85)", textDecoration: "none", fontSize: 14, fontWeight: 500 },
 
   // Hero
-  hero: { background: `linear-gradient(135deg, ${BLUE_DARK}, ${BLUE})`, color: "white", padding: "64px 32px", display: "flex", flexWrap: "wrap", gap: 40, alignItems: "center", justifyContent: "center" },
+  hero: { background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, color: "white", padding: "64px 32px", display: "flex", flexWrap: "wrap", gap: 40, alignItems: "center", justifyContent: "center", borderBottom: `2px solid ${GOLD}` },
   heroInner: { maxWidth: 560 },
   heroBadge: { background: "rgba(255,255,255,0.15)", display: "inline-block", padding: "6px 14px", borderRadius: 20, fontSize: 12, letterSpacing: 1, marginBottom: 18 },
-  heroTitle: { fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 800, lineHeight: 1.2, margin: "0 0 16px" },
-  heroAccent: { color: "#76c7df" },
+  heroTitle: { fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 800, lineHeight: 1.2, margin: "0 0 16px", fontFamily: "'Playfair Display', Georgia, serif" },
+  heroAccent: { color: GOLD },
   heroSub: { fontSize: 16, opacity: 0.85, lineHeight: 1.7, margin: "0 0 28px" },
-  heroCTA: { background: "white", color: BLUE, border: "none", padding: "14px 28px", borderRadius: 30, fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,0.25)", transition: "transform 0.2s" },
+  heroCTA: { background: GOLD, color: "white", border: "none", padding: "14px 28px", borderRadius: 30, fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 20px rgba(0,0,0,0.2)", transition: "transform 0.2s" },
 
   heroCard: { background: "rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "28px 36px", display: "flex", gap: 24, alignItems: "center" },
   cardStat: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4 },
@@ -923,10 +926,10 @@ const styles = {
 
   // FAQs (main page)
   faqSection: { maxWidth: 960, margin: "48px auto", padding: "0 24px", width: "100%" },
-  faqHeading: { fontSize: 22, fontWeight: 700, color: BLUE_DARK, marginBottom: 20 },
+  faqHeading: { fontSize: 22, fontWeight: 700, color: NAVY, marginBottom: 20, fontFamily: "'Playfair Display', Georgia, serif" },
   faqGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 },
-  faqChip: { textAlign: "left", background: "rgba(218,16,57,0.04)", border: "1px solid rgba(218,16,57,0.2)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 4 },
-  faqChipLabel: { fontSize: 10, fontWeight: 700, color: BLUE, textTransform: "uppercase", letterSpacing: 0.5 },
+  faqChip: { textAlign: "left", background: "white", border: "1px solid rgba(212,175,55,0.25)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 4 },
+  faqChipLabel: { fontSize: 10, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: 0.5 },
   faqChipQ: { fontSize: 13, fontWeight: 600, color: "#222" },
   faqChipP: { fontSize: 12, color: "#777", lineHeight: 1.4 },
 
@@ -936,7 +939,7 @@ const styles = {
   // FAB and Widget are styled via globalCSS for mobile responsiveness and performance
 
   // Widget Header
-  widgetHeader: { background: `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, color: "white", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  widgetHeader: { background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, color: "white", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${GOLD}` },
   avatar: { width: 34, height: 34, background: "rgba(255,255,255,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 },
 
   clearBtn: { background: "rgba(255,255,255,0.12)", color: "white", border: "1px solid rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer" },
@@ -944,32 +947,32 @@ const styles = {
   voiceToggleBtn: { background: "none", border: "none", color: "white", fontSize: 16, cursor: "pointer", padding: "2px 4px", opacity: 0.8 },
 
   // Messages
-  messages: { flex: 1, overflowY: "auto", padding: "14px", display: "flex", flexDirection: "column", gap: 8, background: "linear-gradient(to bottom, #f9f9f9, #f1f1f1)" },
+  messages: { flex: 1, overflowY: "auto", padding: "14px", display: "flex", flexDirection: "column", gap: 8, background: "#fcfaf7" },
 
   // Bubbles
-  userBubble: { background: `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, color: "white", padding: "10px 14px", borderRadius: "18px 18px 4px 18px", maxWidth: "75%", fontSize: 14, boxShadow: "0 3px 8px rgba(0,0,0,0.15)", lineHeight: 1.5 },
-  botBubble: { background: "white", color: "#333", padding: "10px 14px", borderRadius: "18px 18px 18px 4px", maxWidth: "75%", fontSize: 14, boxShadow: "0 3px 8px rgba(0,0,0,0.1)", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 },
+  userBubble: { background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, color: "white", padding: "10px 14px", borderRadius: "18px 18px 4px 18px", maxWidth: "75%", fontSize: 14, boxShadow: "0 3px 8px rgba(0,0,0,0.15)", lineHeight: 1.5 },
+  botBubble: { background: "white", color: INK, padding: "10px 14px", borderRadius: "18px 18px 18px 4px", maxWidth: "75%", fontSize: 14, boxShadow: "0 3px 8px rgba(0,0,0,0.06)", border: "1px solid rgba(0,0,0,0.04)", lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 },
 
   // Loading
-  loadingSpinner: { width: 10, height: 10, borderRadius: "50%", background: `linear-gradient(90deg, ${BLUE}, #4fc3f7)`, display: "inline-block", animation: "pulse 1s infinite ease-in-out", flexShrink: 0 },
+  loadingSpinner: { width: 10, height: 10, borderRadius: "50%", background: `linear-gradient(90deg, ${GOLD}, ${ACCENT})`, display: "inline-block", animation: "pulse 1s infinite ease-in-out", flexShrink: 0 },
 
   // Empty state
-  emptyState: { textAlign: "center", padding: "24px 12px", color: "#555" },
+  emptyState: { textAlign: "center", padding: "24px 12px", color: INK },
   emptyIcon: { fontSize: 40, marginBottom: 8 },
-  faqToggle: { marginTop: 14, background: "none", border: `1px solid ${BLUE}`, color: BLUE, padding: "6px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer" },
+  faqToggle: { marginTop: 14, background: "none", border: `1px solid ${GOLD}`, color: GOLD, padding: "6px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer" },
   inlineFAQs: { display: "flex", flexDirection: "column", gap: 8, marginTop: 12, textAlign: "left" },
-  inlineFAQ: { background: "white", border: "1px solid #dde", padding: "8px 12px", borderRadius: 10, fontSize: 13, textAlign: "left", cursor: "pointer", color: "#333" },
+  inlineFAQ: { background: "white", border: "1px solid rgba(212,175,55,0.2)", padding: "8px 12px", borderRadius: 10, fontSize: 13, textAlign: "left", cursor: "pointer", color: INK },
 
   // Input
-  inputRow: { display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid #eee", background: "white", alignItems: "center" },
-  langSelect: { padding: "8px 4px", borderRadius: 16, border: "none", fontSize: 13, fontWeight: "600", background: "rgba(218,16,57,0.08)", color: BLUE, cursor: "pointer", outline: "none" },
-  inputField: { flex: 1, border: "none", outline: "none", fontSize: 14, background: "rgba(0,0,0,0.04)", padding: "10px 14px", borderRadius: 16 },
-  iconBtn: { width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, border: "none", color: "white", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.2s" },
+  inputRow: { display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid rgba(0, 0, 0, 0.05)", background: "white", alignItems: "center" },
+  langSelect: { padding: "8px 4px", borderRadius: 16, border: "none", fontSize: 13, fontWeight: "600", background: "rgba(212,175,55,0.08)", color: GOLD, cursor: "pointer", outline: "none" },
+  inputField: { flex: 1, border: "none", outline: "none", fontSize: 14, background: "rgba(0,0,0,0.03)", padding: "10px 14px", borderRadius: 16 },
+  iconBtn: { width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, border: "none", color: "white", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.2s" },
   iconBtnListening: { background: "linear-gradient(135deg, #c00, #900)", animation: "pulse 1.5s infinite" },
 
   // Follow-up suggestions
   suggestionsRow: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6, maxWidth: "85%" },
-  suggestionChip: { background: "rgba(218,16,57,0.05)", border: "1px solid rgba(218,16,57,0.2)", borderRadius: 16, padding: "5px 12px", fontSize: 12, color: "#444", cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit", lineHeight: 1.4 },
+  suggestionChip: { background: "rgba(212,175,55,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: 16, padding: "5px 12px", fontSize: 12, color: INK, cursor: "pointer", transition: "all 0.2s", fontFamily: "inherit", lineHeight: 1.4 },
 
   // Autocomplete suggestions
   autocompleteContainer: {
@@ -978,9 +981,9 @@ const styles = {
     left: "14px",
     right: "14px",
     background: "white",
-    border: "1px solid rgba(218,16,57,0.15)",
+    border: "1px solid rgba(212,175,55,0.25)",
     borderRadius: "16px",
-    boxShadow: "0 -8px 24px rgba(218,16,57,0.06), 0 8px 24px rgba(0,0,0,0.08)",
+    boxShadow: "0 -8px 24px rgba(212,175,55,0.06), 0 8px 24px rgba(0,0,0,0.08)",
     zIndex: 1000,
     maxHeight: "180px",
     overflowY: "auto",
@@ -989,7 +992,7 @@ const styles = {
   autocompleteItem: {
     padding: "8px 14px",
     fontSize: "13px",
-    color: "#333",
+    color: INK,
     cursor: "pointer",
     textAlign: "left",
     transition: "background 0.15s ease",
@@ -1008,9 +1011,9 @@ const styles = {
     gap: 4,
   },
   didYouMeanButton: {
-    background: "rgba(218,16,57,0.06)",
-    border: "1px solid rgba(218,16,57,0.2)",
-    color: "#da1039",
+    background: "rgba(212,175,55,0.06)",
+    border: "1px solid rgba(212,175,55,0.2)",
+    color: GOLD,
     padding: "4px 10px",
     borderRadius: 12,
     fontSize: 12,
@@ -1030,7 +1033,7 @@ const globalCSS = `
     50%      { transform: scale(1.15); }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #f4f6fb; }
+  body { background: #e9e8e5; font-family: 'Plus Jakarta Sans', sans-serif; color: #3b3131; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 10px; }
 
@@ -1042,13 +1045,13 @@ const globalCSS = `
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #da1039, #6d061a);
-    color: white;
+    background: linear-gradient(135deg, #2d2424, #574e45);
+    color: #d4af37;
     font-size: 24px;
-    border: none;
+    border: 2px solid #d4af37;
     cursor: pointer;
     z-index: 9999;
-    box-shadow: 0 8px 32px rgba(218, 16, 57, 0.3);
+    box-shadow: 0 8px 32px rgba(45, 36, 36, 0.3);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     align-items: center;
@@ -1057,13 +1060,13 @@ const globalCSS = `
   }
   .chat-fab:hover {
     transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 10px 40px rgba(218, 16, 57, 0.45);
+    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.35);
   }
   .chat-fab:active {
     transform: scale(0.95);
   }
   .chat-fab.open {
-    background: #333;
+    background: #2d2424;
     transform: rotate(90deg);
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
   }
@@ -1076,11 +1079,11 @@ const globalCSS = `
     width: 380px;
     height: 600px;
     max-height: calc(100vh - 140px);
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 24px;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 24px 64px rgba(45, 36, 36, 0.18);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1104,8 +1107,8 @@ const globalCSS = `
   }
   .chat-input:focus {
     background: white !important;
-    border-color: rgba(218, 16, 57, 0.3) !important;
-    box-shadow: 0 0 0 3px rgba(218, 16, 57, 0.1) !important;
+    border-color: rgba(212, 175, 55, 0.4) !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15) !important;
   }
 
   /* Hero button hover scale */
