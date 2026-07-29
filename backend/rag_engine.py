@@ -32,7 +32,7 @@ class RAGEngine:
                 "X-Title": "CKPCMC Chatbot",
             },
         )
-        self.embedding_model_name = "openai/text-embedding-3-small"
+        self.embedding_model_name = "nvidia/nemotron-3-embed-1b:free"
         print("✅ Embedding client ready!")
 
         # Initialize the active LLM client
@@ -205,11 +205,15 @@ KNOWLEDGE BASE PRIORITY:
                 model=self.embedding_model_name,
                 input=texts
             )
-            return np.array([item.embedding for item in response.data], dtype=np.float32)
+            embeddings = np.array([item.embedding for item in response.data], dtype=np.float32)
+            if not hasattr(self, "embedding_dim") or self.embedding_dim is None:
+                self.embedding_dim = embeddings.shape[1]
+            return embeddings
         except Exception as e:
             print(f"❌ Error getting embeddings from API: {e}")
-            # Fallback to zero vector of 1536 dims on API failure
-            return np.zeros((len(texts), 1536), dtype=np.float32)
+            # Fallback dynamically based on discovered dimension (default to 1024)
+            dim = getattr(self, "embedding_dim", 1024)
+            return np.zeros((len(texts), dim), dtype=np.float32)
 
     def _create_embeddings(self):
         """Create embeddings for all knowledge base entries using Questions and Keywords only"""
