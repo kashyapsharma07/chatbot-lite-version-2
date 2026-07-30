@@ -281,6 +281,18 @@
       "answer": "CKPCMC has a team of highly qualified, experienced, and dedicated faculty members across the Commerce, Management, and Computer Application departments. They hold post-graduate degrees, M.Phil, or Ph.D. credentials and follow learner-centric teaching methodologies. For the complete list of faculty profiles, visit https://ckpcmc.org or contact the college office.",
       "category": "General",
       "keywords": ["faculty list", "teachers", "professors", "teaching staff", "faculties", "about faculty"]
+    },
+    {
+      "question": "What is the step-by-step admission process to apply at CKPCMC?",
+      "answer": "To secure admission at CKPCMC under VNSGU guidelines:\n1. **Online Registration**: Register on the VNSGU Admission Portal (https://vnsgu.ac.in) when applications open.\n2. **College Choice**: Select 'C. K. Pithawalla College of Commerce, Management & Computer Application (CKPCMC)' as your preference.\n3. **Merit List**: VNSGU will release merit lists based on your 12th standard results.\n4. **Seat Confirmation**: If allocated, report to CKPCMC with your VNSGU application form and documents for verification.\n5. **Fee Payment**: Pay Semester 1 fees to confirm your seat.",
+      "category": "Admission",
+      "keywords": ["how to apply", "admission process", "registration steps", "apply online", "vnsgu portal", "choice filling"]
+    },
+    {
+      "question": "What documents are required for admission verification at CKPCMC?",
+      "answer": "When reporting to the college for document verification, bring original and photocopies of:\n• VNSGU Online Admission Registration Form\n• 10th (SSC) & 12th (HSC) Marksheets\n• School Leaving Certificate (LC)\n• Caste / Category Certificate (for SC/ST/SEBC/EWS) if applicable\n• Non-Creamy Layer Certificate (for SEBC students)\n• Trial / Attempt Certificate\n• Provisional Eligibility Certificate (PEC) for non-GSEB board students\n• Passport size photographs",
+      "category": "Admission",
+      "keywords": ["documents required", "verification documents", "certificates needed", "papers to bring", "document checklist", "leaving certificate"]
     }
   ]
 }

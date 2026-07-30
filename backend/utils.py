@@ -334,11 +334,19 @@ class InputGuardrail:
         # 4. Check Allowed Whitelist
         if max_allowed_sim < 0.33:
             on_topic_keywords = {
-                "fee", "fees", "admission", "admissions", "course", "courses", 
-                "bca", "bba", "bcom", "principal", "timing", "timings", 
-                "contact", "placement", "placements", "campus", "hostel", 
-                "canteen", "syllabus", "navyug", "trust", "manage", "manages",
-                "phone", "email", "address", "location"
+                # Admissions & Courses
+                "fee", "fees", "admission", "admissions", "course", "courses", "bca", "bba", "bcom", 
+                "syllabus", "duration", "intake", "seats", "eligibility", "requirements", "apply", "qualify",
+                # Trust & People
+                "principal", "chetan", "patel", "trust", "navyug", "trustee", "trustees", "founder", "hiring",
+                "faculty", "faculties", "teacher", "teachers", "staff", "professors", "professor",
+                # Facilities & Infrastructure
+                "campus", "hostel", "hostels", "canteen", "mess", "food", "wifi", "internet", "stationery", 
+                "medical", "doctor", "health", "atm", "bank", "transport", "bus", "location", "address", "map",
+                # Campus Life & Support
+                "placement", "placements", "jobs", "salary", "recruit", "scholarship", "scholarships", "mysy", 
+                "cmss", "emi", "grayquest", "loan", "ncc", "nss", "grievance", "complaint", "anti-ragging", 
+                "ragging", "council", "helpline", "women", "sanklan", "aluna", "events", "sports"
             }
             query_words = set(re.findall(r"\b\w+\b", sanitized.lower()))
             # Exact intersection check first (fastest)
