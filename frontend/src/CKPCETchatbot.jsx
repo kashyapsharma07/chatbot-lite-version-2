@@ -401,6 +401,12 @@ export default function App() {
   const [sessionId] = useState(() => crypto.randomUUID());
   const [faqs, setFaqs] = useState([]);
   const [showFAQs, setShowFAQs] = useState(false);
+  const [isChatEnded, setIsChatEnded] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [surveyStars, setSurveyStars] = useState(0);
+  const [surveyGoal, setSurveyGoal] = useState("");
+  const [surveyComments, setSurveyComments] = useState("");
+  const [surveySubmitted, setSurveySubmitted] = useState(false);
   const [isTtsEnabled, setIsTtsEnabled] = useState(() => {
     return localStorage.getItem("isTtsEnabled") === "true";
   });
@@ -703,6 +709,47 @@ export default function App() {
     }).catch(() => { });
   };
 
+  // ── Transcript Download ──────────────────────────────────────────
+  const downloadTranscript = () => {
+    const formattedText = messages
+      .map((m) => {
+        const sender = m.sender === "user" ? "Student" : "Assistant";
+        return `[${sender}]: ${m.text || m.content}`;
+      })
+      .join("\n\n");
+
+    const blob = new Blob([formattedText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `CKPCMC_Chat_Transcript_${new Date().toISOString().split("T")[0]}.txt`;
+    link.click();
+  };
+
+  // ── Submit Feedback ──────────────────────────────────────────────
+  const submitFeedback = () => {
+    setSurveySubmitted(true);
+    fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stars: surveyStars,
+        met_goal: surveyGoal,
+        comments: surveyComments,
+      }),
+    }).catch(() => { });
+  };
+
+  // ── Start New Chat ───────────────────────────────────────────────
+  const startNewChat = () => {
+    clearChat();
+    setIsChatEnded(false);
+    setSurveyStars(0);
+    setSurveyGoal("");
+    setSurveyComments("");
+    setSurveySubmitted(false);
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
@@ -768,125 +815,278 @@ export default function App() {
         {open ? "✖" : "💬"}
       </button>
 
-      {/* ── Chat Widget ──────────────────────────────────────────── */}
-      <div className={`chat-widget ${open ? "open" : ""}`} aria-hidden={!open}>
-
-        {/* Header */}
-        <div style={styles.widgetHeader}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={styles.avatar}>🤖</div>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>CKPCMC Assistant</div>
+      {/* ── Chat Widget Layout Wrapper ────────────────────────────── */}
+      <div 
+        className={`chat-container-layout ${showHistoryDrawer ? "drawer-open" : ""}`}
+        style={{ 
+          position: "fixed",
+          bottom: "100px",
+          right: "24px",
+          display: open ? "flex" : "none",
+          gap: "16px",
+          alignItems: "flex-end",
+          zIndex: 9998,
+          pointerEvents: "none",
+          height: "600px",
+          maxHeight: "calc(100vh - 140px)"
+        }}
+      >
+        {/* History Sidebar Panel */}
+        <div className={`history-drawer ${showHistoryDrawer ? "open" : ""}`} style={{ pointerEvents: "auto" }}>
+          <div style={styles.drawerHeader}>
+            <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+              <span>🕒</span> Chat History
             </div>
+            <button style={styles.closeDrawerBtn} onClick={() => setShowHistoryDrawer(false)}>✖</button>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button
-              style={styles.voiceToggleBtn}
-              onClick={toggleTts}
-              title={isTtsEnabled ? "Disable Text-to-Speech" : "Enable Text-to-Speech"}
-            >
-              {isTtsEnabled ? "🔊" : "🔇"}
-            </button>
-            <button style={styles.clearBtn} onClick={clearChat} title="Clear chat">Clear</button>
-            <button style={styles.closeBtn} onClick={() => setOpen(false)}>✖</button>
+          <div className="drawer-content" style={styles.drawerContent}>
+            {messages.length === 0 ? (
+              <div style={styles.drawerEmpty}>
+                <span style={{ fontSize: 32 }}>📁</span>
+                <p style={{ fontSize: 13, color: "#888", marginTop: 8 }}>No conversation history in this session yet.</p>
+              </div>
+            ) : (
+              <div style={styles.drawerLog}>
+                {messages.map((m, idx) => (
+                  <div key={idx} style={{ marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                    <div style={{ fontSize: 11, color: m.role === "user" ? GOLD : "#888", fontWeight: 700, textTransform: "uppercase" }}>
+                      {m.role === "user" ? "Student" : "Assistant"}
+                    </div>
+                    <div style={{ fontSize: 12, color: INK, marginTop: 4, whiteSpace: "pre-wrap" }}>
+                      {m.role === "user" ? m.content : m.content || "..."}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Messages */}
-        <div style={styles.messages}>
-          {messages.length === 0 && (
-            <div style={styles.emptyState}>
-              <div style={styles.emptyIcon}>🎓</div>
-              <p style={{ fontWeight: 600, margin: "8px 0 4px" }}>Welcome to CKPCMC Bot!</p>
-              <p style={{ fontSize: 13, color: "#888", lineHeight: 1.5 }}>
-                Ask me about admissions, course fees, intake capacity, principal, or timings.
-              </p>
-              {faqs.length > 0 && (
-                <button style={styles.faqToggle} onClick={() => setShowFAQs((s) => !s)}>
-                  {showFAQs ? "Hide suggestions ▲" : "Show quick questions ▼"}
-                </button>
-              )}
-              {showFAQs && (
-                <div style={styles.inlineFAQs}>
-                  {faqs.map((f, i) => (
-                    <button
-                      key={i}
-                      style={styles.inlineFAQ}
-                      onClick={() => sendMessage(f.question)}
-                    >
-                      {f.question}
-                    </button>
-                  ))}
+        {/* Chat Widget Container */}
+        <div className={`chat-widget ${open ? "open" : ""}`} style={{ pointerEvents: "auto" }} aria-hidden={!open}>
+
+          {/* Header */}
+          <div style={styles.widgetHeader}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={styles.avatar}>🤖</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>CKPCMC Assistant</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button
+                style={styles.voiceToggleBtn}
+                onClick={toggleTts}
+                title={isTtsEnabled ? "Disable Text-to-Speech" : "Enable Text-to-Speech"}
+              >
+                {isTtsEnabled ? "🔊" : "🔇"}
+              </button>
+              <button 
+                style={{ ...styles.iconHeaderBtn, background: showHistoryDrawer ? "rgba(212,175,55,0.25)" : "none" }} 
+                onClick={() => setShowHistoryDrawer(prev => !prev)} 
+                title="Toggle History"
+              >
+                🕒
+              </button>
+              <button 
+                style={styles.iconHeaderBtn} 
+                onClick={() => setIsChatEnded(true)} 
+                title="End Chat"
+              >
+                ⏻
+              </button>
+              <button style={styles.closeBtn} onClick={() => setOpen(false)}>✖</button>
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div style={styles.messages}>
+            
+            {/* Ended banner */}
+            {isChatEnded && (
+              <div className="ended-banner">
+                <div style={{ fontSize: 13, fontWeight: 700 }}>The chat is ended.</div>
+                <div className="ended-banner-btns">
+                  <button className="ended-banner-btn primary" onClick={startNewChat}>
+                    🔄 Start new chat
+                  </button>
+                  <button className="ended-banner-btn secondary" onClick={downloadTranscript}>
+                    📥 Download transcript
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {messages.length === 0 && (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>🎓</div>
+                <p style={{ fontWeight: 600, margin: "8px 0 4px" }}>Welcome to CKPCMC Bot!</p>
+                <p style={{ fontSize: 13, color: "#888", lineHeight: 1.5, marginBottom: 12 }}>
+                  Ask me about admissions, course fees, intake capacity, principal, or timings.
+                </p>
+                
+                {/* Comm100 Stacked welcome menu card */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: "100%", width: "100%", marginTop: 12 }}>
+                  <button className="welcome-card-btn" onClick={() => sendMessage("What courses are offered?")}>
+                    📚 What courses are offered?
+                  </button>
+                  <button className="welcome-card-btn" onClick={() => sendMessage("What is the fee structure?")}>
+                    💰 What is the fee structure?
+                  </button>
+                  <button className="welcome-card-btn" onClick={() => sendMessage("What is the step-by-step admission process to apply at CKPCMC?")}>
+                    📝 How to get admission?
+                  </button>
+                  <button className="welcome-card-btn" onClick={() => sendMessage("Who is the Principal of CKPCMC?")}>
+                    👨‍🏫 Who is the Principal of the college?
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {messages.map((m, i) => (
+              <MessageBubble key={i} msg={m} onSuggestionClick={sendMessage} />
+            ))}
+
+            {loading && <LoadingDots />}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Row or Survey Form */}
+          {!isChatEnded ? (
+            <div style={styles.inputRow}>
+              <input
+                ref={inputRef}
+                className="chat-input"
+                style={styles.inputField}
+                value={input}
+                placeholder="Ask about B.Com, BBA, BCA…"
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
+              />
+              <button
+                style={{
+                  ...styles.iconBtn,
+                  background: isListening ? "linear-gradient(135deg, #c00, #900)" : "rgba(218,16,57,0.08)",
+                  color: isListening ? "white" : "#da1039",
+                  animation: isListening ? "pulse 1.5s infinite" : "none",
+                  opacity: loading ? 0.5 : 1
+                }}
+                onClick={toggleListening}
+                disabled={loading}
+                title={isListening ? "Listening... Click to stop" : "Ask by speaking"}
+              >
+                {isListening ? "🛑" : "🎤"}
+              </button>
+              <button
+                style={{ ...styles.iconBtn, opacity: !input.trim() || loading ? 0.5 : 1 }}
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || loading}
+                title="Send"
+              >
+                ➤
+              </button>
+            </div>
+          ) : (
+            // Student Survey form
+            <div style={{ padding: "16px", borderTop: "1px solid rgba(0, 0, 0, 0.08)", background: "white" }}>
+              {surveySubmitted ? (
+                <div style={{ textAlign: "center", padding: "16px 0", color: GOLD, fontWeight: 700 }}>
+                  🙏 Thank you for your feedback!
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 8 }}>
+                    Rate your experience:
+                  </div>
+                  <div className="star-rating">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        className="star-btn"
+                        onClick={() => setSurveyStars(star)}
+                        style={{
+                          color: star <= surveyStars ? GOLD : "rgba(0,0,0,0.15)"
+                        }}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
+                    Were your queries fully answered?
+                  </div>
+                  <div style={{ display: "flex", gap: 14, marginBottom: 12, fontSize: 13 }}>
+                    {["Yes", "No", "Partially"].map((opt) => (
+                      <label key={opt} style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name="met_goal"
+                          value={opt}
+                          checked={surveyGoal === opt}
+                          onChange={(e) => setSurveyGoal(e.target.value)}
+                        />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
+                    Any comments or suggestions?
+                  </div>
+                  <textarea
+                    className="survey-textarea"
+                    value={surveyComments}
+                    onChange={(e) => setSurveyComments(e.target.value)}
+                    placeholder="Share your thoughts..."
+                    rows={2}
+                  />
+
+                  <button
+                    style={{
+                      width: "100%",
+                      background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`,
+                      color: "white",
+                      border: "none",
+                      padding: "10px",
+                      borderRadius: "12px",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      marginTop: 8
+                    }}
+                    onClick={submitFeedback}
+                  >
+                    Submit Feedback
+                  </button>
                 </div>
               )}
             </div>
           )}
 
-          {messages.map((m, i) => (
-            <MessageBubble key={i} msg={m} onSuggestionClick={sendMessage} />
-          ))}
-
-          {loading && <LoadingDots />}
-          <div ref={messagesEndRef} />
+          {/* Autocomplete dropdown suggestions */}
+          {showAutocomplete && autocompleteSuggestions.length > 0 && !isChatEnded && (
+            <div style={styles.autocompleteContainer}>
+              {autocompleteSuggestions.map((s, idx) => (
+                <div
+                  key={idx}
+                  style={styles.autocompleteItem}
+                  onClick={() => {
+                    sendMessage(s);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(218,16,57,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "white";
+                  }}
+                >
+                  🔍 {s}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Input */}
-        <div style={styles.inputRow}>
-          <input
-            ref={inputRef}
-            className="chat-input"
-            style={styles.inputField}
-            value={input}
-            placeholder="Ask about B.Com, BBA, BCA…"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
-          />
-          <button
-            style={{
-              ...styles.iconBtn,
-              background: isListening ? "linear-gradient(135deg, #c00, #900)" : "rgba(218,16,57,0.08)",
-              color: isListening ? "white" : "#da1039",
-              animation: isListening ? "pulse 1.5s infinite" : "none",
-              opacity: loading ? 0.5 : 1
-            }}
-            onClick={toggleListening}
-            disabled={loading}
-            title={isListening ? "Listening... Click to stop" : "Ask by speaking"}
-          >
-            {isListening ? "🛑" : "🎤"}
-          </button>
-          <button
-            style={{ ...styles.iconBtn, opacity: !input.trim() || loading ? 0.5 : 1 }}
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || loading}
-            title="Send"
-          >
-            ➤
-          </button>
-        </div>
-
-        {/* Autocomplete dropdown suggestions */}
-        {showAutocomplete && autocompleteSuggestions.length > 0 && (
-          <div style={styles.autocompleteContainer}>
-            {autocompleteSuggestions.map((s, idx) => (
-              <div
-                key={idx}
-                style={styles.autocompleteItem}
-                onClick={() => {
-                  sendMessage(s);
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(218,16,57,0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "white";
-                }}
-              >
-                🔍 {s}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </>
   );
@@ -941,6 +1141,13 @@ const styles = {
   // Widget Header
   widgetHeader: { background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, color: "white", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${GOLD}` },
   avatar: { width: 34, height: 34, background: "rgba(255,255,255,0.15)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 },
+
+  iconHeaderBtn: { background: "none", border: "none", color: "white", fontSize: 16, cursor: "pointer", padding: "4px 6px", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" },
+  drawerHeader: { background: NAVY, color: "white", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `2px solid ${GOLD}` },
+  closeDrawerBtn: { background: "none", border: "none", color: "white", fontSize: 13, cursor: "pointer" },
+  drawerContent: { flex: 1, overflowY: "auto", padding: "16px", background: "#fcfaf7" },
+  drawerEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "40px 20px", textAlign: "center" },
+  drawerLog: { padding: 4 },
 
   clearBtn: { background: "rgba(255,255,255,0.12)", color: "white", border: "1px solid rgba(255,255,255,0.2)", padding: "4px 10px", borderRadius: 8, fontSize: 12, cursor: "pointer" },
   closeBtn: { background: "none", border: "none", color: "white", fontSize: 16, cursor: "pointer", padding: "2px 6px" },
@@ -1073,12 +1280,9 @@ const globalCSS = `
 
   /* Chat Widget Container */
   .chat-widget {
-    position: fixed;
-    bottom: 100px;
-    right: 24px;
+    position: relative;
     width: 380px;
-    height: 600px;
-    max-height: calc(100vh - 140px);
+    height: 100%;
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(212, 175, 55, 0.2);
@@ -1087,17 +1291,137 @@ const globalCSS = `
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    z-index: 9998;
-    opacity: 0;
-    transform: scale(0.1);
-    transform-origin: bottom right;
-    pointer-events: none;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
   }
-  .chat-widget.open {
+
+  /* History Drawer Panel */
+  .history-drawer {
+    width: 280px;
+    height: 100%;
+    background: white;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 24px;
+    box-shadow: 0 16px 48px rgba(45, 36, 36, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+    opacity: 0;
+    transform: translateX(50px) scale(0.95);
+    pointer-events: none;
+  }
+  .history-drawer.open {
     opacity: 1;
-    transform: scale(1);
+    transform: translateX(0) scale(1);
     pointer-events: auto;
+  }
+
+  /* Star Rating styling */
+  .star-rating {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .star-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    padding: 0;
+  }
+  .star-btn:hover {
+    transform: scale(1.25);
+  }
+
+  /* Survey Textarea focusing */
+  .survey-textarea {
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+    margin-bottom: 10px;
+  }
+  .survey-textarea:focus {
+    border-color: #d4af37;
+  }
+
+  /* Banner overlay for Ended State */
+  .ended-banner {
+    background: #2d2424;
+    color: white;
+    padding: 12px;
+    border-bottom: 2px solid #d4af37;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+  .ended-banner-btns {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+  .ended-banner-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.25);
+    text-align: center;
+    background: none;
+    color: white;
+    outline: none;
+  }
+  .ended-banner-btn.primary {
+    background: #d4af37;
+    color: white;
+    border-color: #d4af37;
+  }
+  .ended-banner-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+
+  /* Stacked Welcome Card Button */
+  .welcome-card-btn {
+    width: 100%;
+    text-align: left;
+    background: rgba(212, 175, 55, 0.05);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: 13px;
+    color: #3b3131;
+    font-weight: 600;
+    outline: none;
+  }
+  .welcome-card-btn:hover {
+    background: rgba(212, 175, 55, 0.12);
+    border-color: #d4af37;
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    .history-drawer {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 0 !important;
+      z-index: 10001 !important;
+    }
   }
 
   /* Input fields focusing */

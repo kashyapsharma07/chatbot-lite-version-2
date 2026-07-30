@@ -58,6 +58,45 @@ def chatbot():
     return response
 
 
+@app.route("/api/feedback", methods=["POST"])
+def save_feedback():
+    import time
+    try:
+        data = request.json or {}
+        stars = data.get("stars")
+        met_goal = data.get("met_goal")
+        comments = data.get("comments", "")
+        
+        # Save to backend/logs/feedback.json
+        feedback_dir = os.path.join(os.path.dirname(__file__), "logs")
+        os.makedirs(feedback_dir, exist_ok=True)
+        feedback_path = os.path.join(feedback_dir, "feedback.json")
+        
+        feedback_entry = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "stars": stars,
+            "met_goal": met_goal,
+            "comments": comments
+        }
+        
+        entries = []
+        if os.path.exists(feedback_path):
+            try:
+                with open(feedback_path, "r", encoding="utf-8") as f:
+                    entries = json.load(f)
+            except Exception:
+                pass
+                
+        entries.append(feedback_entry)
+        with open(feedback_path, "w", encoding="utf-8") as f:
+            json.dump(entries, f, indent=2)
+            
+        return jsonify({"status": "success"})
+    except Exception as e:
+        print(f"❌ Error saving feedback: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route("/clear_history", methods=["POST"])
 def clear_history():
     data = request.get_json()
