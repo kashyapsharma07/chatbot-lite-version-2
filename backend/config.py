@@ -55,7 +55,7 @@ class Config:
     # all-MiniLM-L6-v2 — English-only, 80MB (3.5× lighter than multilingual model)
     EMBEDDING_MODEL = "all-MiniLM-L6-v2"
     TOP_K_RETRIEVAL = 5
-    SIMILARITY_THRESHOLD = 0.38
+    SIMILARITY_THRESHOLD = 0.35
     MAX_HISTORY_LENGTH = 5
     SESSION_TIMEOUT = 3600
 
