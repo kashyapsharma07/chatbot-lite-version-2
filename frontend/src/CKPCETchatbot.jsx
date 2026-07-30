@@ -1488,6 +1488,25 @@ const globalCSS = `
   }
 
   @media (max-width: 768px) {
+    .chat-container-layout {
+      position: fixed !important;
+      bottom: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      z-index: 10000 !important;
+      gap: 0 !important;
+      transform: translateY(0) scale(1) !important;
+    }
+    .chat-widget {
+      position: relative !important;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 0 !important;
+      border: none !important;
+      z-index: 10000 !important;
+    }
     .history-drawer {
       position: absolute !important;
       left: 0 !important;
@@ -1537,21 +1556,22 @@ const globalCSS = `
     }
   }
 
-  /* Responsive mobile adjustments for chat widget */
-  @media (max-width: 480px) {
-    .chat-widget {
-      bottom: 0 !important;
-      right: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      border-radius: 0 !important;
-      border: none !important;
-      z-index: 10000 !important;
-      transform-origin: bottom right;
-    }
-    .chat-widget.open {
-      transform: scale(1) !important;
-    }
-  }
+  /* Responsive mobile adjustments for chat widget pruned - consolidated under 768px */
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
 `;
