@@ -768,6 +768,11 @@ export default function App() {
         comments: surveyComments,
       }),
     }).catch(() => { });
+
+    // Automatically transition to a fresh new chat after 2.5 seconds
+    setTimeout(() => {
+      startNewChat();
+    }, 2500);
   };
 
   // ── Start New Chat ───────────────────────────────────────────────
@@ -940,6 +945,9 @@ export default function App() {
                   </button>
                   <button className="ended-banner-btn secondary" onClick={downloadTranscript}>
                     📥 Download transcript
+                  </button>
+                  <button className="ended-banner-btn secondary" onClick={() => setIsChatEnded(false)}>
+                    ↩ Resume chat
                   </button>
                 </div>
               </div>
