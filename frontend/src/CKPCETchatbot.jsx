@@ -1476,7 +1476,7 @@ const globalCSS = `
   }
 
   @media (max-width: 768px) {
-    .chat-container-layout {
+    .chat-container-layout.open, .chat-container-layout.drawer-open {
       position: fixed !important;
       bottom: 0 !important;
       right: 0 !important;
