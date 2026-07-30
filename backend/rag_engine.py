@@ -83,6 +83,7 @@ class RAGEngine:
 
         # Conversation history
         self.conversation_history = {}
+        self.session_timestamps = {}
 
         # Response cache
         self.response_cache = {}
@@ -215,14 +216,58 @@ KNOWLEDGE BASE PRIORITY:
             return np.zeros((len(texts), dim), dtype=np.float32)
 
     def _create_embeddings(self):
-        """Create embeddings for all knowledge base entries using Questions and Keywords only"""
+        """Create or load cached embeddings for all knowledge base entries using Questions and Keywords only"""
+        import hashlib
+        
         texts = []
         for item in self.knowledge_base:
             q = item.get("question", "")
             kw = " ".join(item.get("keywords", []))
             texts.append(f"{q} {kw}")
 
-        return self._get_embeddings_api(texts)
+        # Compute content hash of ckpcmcdataset.json content
+        dataset_path = Config.DATASET_PATH
+        try:
+            with open(dataset_path, "rb") as f:
+                content = f.read()
+            content_hash = hashlib.md5(content).hexdigest()
+        except Exception:
+            content_hash = "default_hash"
+
+        # Check for cached file
+        cache_dir = os.path.join(os.path.dirname(__file__), "logs")
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, "embeddings_cache.json")
+
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    cache_data = json.load(f)
+                if cache_data.get("hash") == content_hash and "embeddings" in cache_data:
+                    print("⚡ Loaded embeddings from local cache file!")
+                    embeddings = np.array(cache_data["embeddings"], dtype=np.float32)
+                    self.embedding_dim = embeddings.shape[1]
+                    return embeddings
+            except Exception as e:
+                print(f"⚠️ Failed to load embeddings cache: {e}")
+
+        # Generate fresh embeddings
+        print("🔄 Fetching fresh embeddings from API...")
+        embeddings = self._get_embeddings_api(texts)
+        
+        # Save to cache
+        try:
+            cache_data = {
+                "hash": content_hash,
+                "embeddings": embeddings.tolist()
+            }
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(cache_data, f)
+            print("💾 Saved embeddings to local cache file!")
+        except Exception as e:
+            print(f"⚠️ Failed to save embeddings cache: {e}")
+
+        return embeddings
 
     def _retrieve_context(self, query, top_k=None):
         """Retrieve relevant context using semantic search"""
@@ -308,6 +353,25 @@ KNOWLEDGE BASE PRIORITY:
             return True
         return False
 
+    def _cleanup_expired_sessions(self):
+        """Purge sessions inactive for more than Config.SESSION_TIMEOUT seconds"""
+        current_time = time.time()
+        timeout = getattr(Config, "SESSION_TIMEOUT", 3600)
+        
+        # Purge inactive session history
+        expired = [
+            sid for sid, last_active in self.session_timestamps.items()
+            if current_time - last_active > timeout
+        ]
+        for sid in expired:
+            self.conversation_history.pop(sid, None)
+            self.session_timestamps.pop(sid, None)
+            
+        # Purge expired response cache entries
+        for key, cached in list(self.response_cache.items()):
+            if current_time - cached.get("timestamp", 0) > timeout:
+                self.response_cache.pop(key, None)
+
     def _build_prompt_stream(self, user_input, context, session_id):
         """Build prompt for streaming without the suggestions format constraint"""
         history = self.conversation_history.get(session_id, [])
@@ -342,6 +406,10 @@ KNOWLEDGE BASE PRIORITY:
 
     def generate_response_stream(self, user_input, session_id="default"):
         """Main streaming method to generate chatbot response (English only)."""
+        # Update session timestamp and run expired session cleanups
+        self.session_timestamps[session_id] = time.time()
+        self._cleanup_expired_sessions()
+
         default_suggestions = [
             "What courses are offered?",
             "Tell me about placements.",

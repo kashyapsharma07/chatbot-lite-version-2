@@ -32,6 +32,35 @@ print("✅ RAG Engine Ready!")
 print("=" * 50)
 
 
+# Custom zero-dependency IP rate-limiting middleware
+ip_request_timestamps = {}
+
+@app.before_request
+def limit_api_rate():
+    # Only rate-limit the POST /api chat endpoint
+    if request.path == "/api" and request.method == "POST":
+        import time
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+        # Extract direct client IP if X-Forwarded-For contains proxy chain
+        if "," in ip:
+            ip = ip.split(",")[0].strip()
+        now = time.time()
+        
+        timestamps = ip_request_timestamps.get(ip, [])
+        # Filter request timestamps within the last 60 seconds
+        timestamps = [t for t in timestamps if now - t < 60]
+        
+        if len(timestamps) >= 30:
+            print(f"⚠️ Rate limit exceeded for client IP: {ip}")
+            return jsonify({
+                "type": "content",
+                "content": "Too many requests. Please wait a minute and try again."
+            }), 429
+            
+        timestamps.append(now)
+        ip_request_timestamps[ip] = timestamps
+
+
 # ── API Routes ────────────────────────────────────────────────────────────────
 
 @app.route("/api", methods=["POST"])
