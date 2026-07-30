@@ -851,19 +851,7 @@ export default function App() {
       </button>
 
       {/* ── Chat Widget Layout Wrapper ────────────────────────────── */}
-      <div 
-        className={`chat-container-layout ${open ? "open" : ""} ${showHistoryDrawer ? "drawer-open" : ""}`}
-        style={{ 
-          position: "fixed",
-          bottom: "100px",
-          right: "24px",
-          gap: "16px",
-          alignItems: "flex-end",
-          zIndex: 9998,
-          height: "600px",
-          maxHeight: "calc(100vh - 140px)"
-        }}
-      >
+      <div className={`chat-container-layout ${open ? "open" : ""} ${showHistoryDrawer ? "drawer-open" : ""}`}>
         {/* History Sidebar Panel */}
         <div className={`history-drawer ${showHistoryDrawer ? "open" : ""}`} style={{ pointerEvents: "auto" }}>
           <div style={styles.drawerHeader}>
@@ -1506,6 +1494,8 @@ const globalCSS = `
       border-radius: 0 !important;
       border: none !important;
       z-index: 10000 !important;
+      backdrop-filter: none !important; /* Remove laggy blur on mobile */
+      background: white !important; /* Solid background for max mobile performance */
     }
     .history-drawer {
       position: absolute !important;
