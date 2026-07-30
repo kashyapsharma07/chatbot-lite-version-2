@@ -395,18 +395,43 @@ function FAQChip({ faq, onSelect }) {
 // ─── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("chatbot_messages")) || [];
+    } catch {
+      return [];
+    }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState(() => {
+    let sid = localStorage.getItem("chatbot_session_id");
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem("chatbot_session_id", sid);
+    }
+    return sid;
+  });
   const [faqs, setFaqs] = useState([]);
   const [showFAQs, setShowFAQs] = useState(false);
-  const [isChatEnded, setIsChatEnded] = useState(false);
+  const [isChatEnded, setIsChatEnded] = useState(() => {
+    return localStorage.getItem("chatbot_chat_ended") === "true";
+  });
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [surveyStars, setSurveyStars] = useState(0);
   const [surveyGoal, setSurveyGoal] = useState("");
   const [surveyComments, setSurveyComments] = useState("");
   const [surveySubmitted, setSurveySubmitted] = useState(false);
+
+  // Sync messages to localStorage
+  useEffect(() => {
+    localStorage.setItem("chatbot_messages", JSON.stringify(messages));
+  }, [messages]);
+
+  // Sync chat ended status to localStorage
+  useEffect(() => {
+    localStorage.setItem("chatbot_chat_ended", String(isChatEnded));
+  }, [isChatEnded]);
   const [isTtsEnabled, setIsTtsEnabled] = useState(() => {
     return localStorage.getItem("isTtsEnabled") === "true";
   });
@@ -702,6 +727,11 @@ export default function App() {
   const clearChat = () => {
     speechManagerRef.current?.cancel();
     setMessages([]);
+    localStorage.removeItem("chatbot_messages");
+    localStorage.removeItem("chatbot_chat_ended");
+    const newSessionId = crypto.randomUUID();
+    setSessionId(newSessionId);
+    localStorage.setItem("chatbot_session_id", newSessionId);
     fetch("/clear_history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
