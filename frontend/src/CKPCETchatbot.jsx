@@ -817,16 +817,14 @@ export default function App() {
 
       {/* ── Chat Widget Layout Wrapper ────────────────────────────── */}
       <div 
-        className={`chat-container-layout ${showHistoryDrawer ? "drawer-open" : ""}`}
+        className={`chat-container-layout ${open ? "open" : ""} ${showHistoryDrawer ? "drawer-open" : ""}`}
         style={{ 
           position: "fixed",
           bottom: "100px",
           right: "24px",
-          display: open ? "flex" : "none",
           gap: "16px",
           alignItems: "flex-end",
           zIndex: 9998,
-          pointerEvents: "none",
           height: "600px",
           maxHeight: "calc(100vh - 140px)"
         }}
@@ -1259,11 +1257,26 @@ const globalCSS = `
     cursor: pointer;
     z-index: 9999;
     box-shadow: 0 8px 32px rgba(45, 36, 36, 0.3);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     outline: none;
+  }
+  .chat-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #d4af37;
+    opacity: 0.4;
+    animation: fab-pulse 2s infinite ease-out;
+    pointer-events: none;
+  }
+  @keyframes fab-pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.4); opacity: 0; }
   }
   .chat-fab:hover {
     transform: scale(1.1) rotate(5deg);
@@ -1276,6 +1289,31 @@ const globalCSS = `
     background: #2d2424;
     transform: rotate(90deg);
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .chat-fab.open::after {
+    display: none;
+  }
+
+  /* Chat Widget Layout Wrapper */
+  .chat-container-layout {
+    position: fixed;
+    bottom: 100px;
+    right: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    z-index: 9998;
+    height: 600px;
+    max-height: calc(100vh - 140px);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out;
+  }
+  .chat-container-layout.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
   }
 
   /* Chat Widget Container */
@@ -1291,7 +1329,6 @@ const globalCSS = `
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
   }
 
   /* History Drawer Panel */
@@ -1305,14 +1342,14 @@ const globalCSS = `
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
     opacity: 0;
-    transform: translateX(50px) scale(0.95);
+    transform: translateX(30px);
     pointer-events: none;
   }
   .history-drawer.open {
     opacity: 1;
-    transform: translateX(0) scale(1);
+    transform: translateX(0);
     pointer-events: auto;
   }
 
