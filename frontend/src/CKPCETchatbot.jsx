@@ -853,7 +853,7 @@ export default function App() {
       {/* ── Chat Widget Layout Wrapper ────────────────────────────── */}
       <div className={`chat-container-layout ${open ? "open" : ""} ${showHistoryDrawer ? "drawer-open" : ""}`}>
         {/* History Sidebar Panel */}
-        <div className={`history-drawer ${showHistoryDrawer ? "open" : ""}`} style={{ pointerEvents: "auto" }}>
+        <div className={`history-drawer ${showHistoryDrawer ? "open" : ""}`}>
           <div style={styles.drawerHeader}>
             <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
               <span>🕒</span> Chat History
@@ -884,7 +884,7 @@ export default function App() {
         </div>
 
         {/* Chat Widget Container */}
-        <div className={`chat-widget ${open ? "open" : ""}`} style={{ pointerEvents: "auto" }} aria-hidden={!open}>
+        <div className={`chat-widget ${open ? "open" : ""}`} aria-hidden={!open}>
 
           {/* Header */}
           <div style={styles.widgetHeader}>
