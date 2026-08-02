@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./CKPCETchatbot";
+import App from "./CKPCMCchatbot";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>

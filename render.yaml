@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ckpcet-chatbot
+    name: ckpcmc-chatbot
     env: python
     buildCommand: ./render-build.sh
     startCommand: gunicorn --bind 0.0.0.0:$PORT --chdir backend app:app

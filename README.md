@@ -1,6 +1,6 @@
-# CKP Engineering Bot
+# CKPCMC Chatbot
 
-A full-stack AI-powered chatbot built with Flask and React that uses Retrieval-Augmented Generation (RAG) to provide intelligent responses about CKP Engineering topics.
+A full-stack AI-powered chatbot built with Flask and React that uses Retrieval-Augmented Generation (RAG) to provide intelligent responses about CKPCMC topics.
 
 ## 🚀 Features
 
@@ -33,7 +33,7 @@ A full-stack AI-powered chatbot built with Flask and React that uses Retrieval-A
 ## 📁 Project Structure
 
 ```
-CKP-Engineering-bot/
+CKPCMC-chatbot/
 ├── backend/
 │   ├── app.py              # Flask application entry point
 │   ├── rag_engine.py       # RAG engine implementation
@@ -45,7 +45,7 @@ CKP-Engineering-bot/
 ├── ckpcmcdataset.json      # Knowledge base dataset
 ├── frontend/
 │   ├── src/
-│   │   ├── CKPCETchatbot.jsx  # Main chatbot component
+│   │   ├── CKPCMCchatbot.jsx  # Main chatbot component
 │   │   ├── main.jsx           # React entry point
 │   │   ├── App.css            # Application styles
 │   │   └── index.css          # Global styles
