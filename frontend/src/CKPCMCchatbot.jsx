@@ -314,7 +314,7 @@ function MessageBubble({ msg, onSuggestionClick }) {
       }}
     >
       {(isUser || hasContent) && (
-        <div style={isUser ? styles.userBubble : styles.botBubble}>
+        <div className={isUser ? "user-bubble" : "bot-bubble"} style={isUser ? styles.userBubble : styles.botBubble}>
           {isUser ? (
             <span>{msg.content}</span>
           ) : (
@@ -432,6 +432,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("chatbot_chat_ended", String(isChatEnded));
   }, [isChatEnded]);
+
+  // Lock background body scroll when mobile chatbot modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add("chat-modal-open");
+    } else {
+      document.body.classList.remove("chat-modal-open");
+    }
+    return () => {
+      document.body.classList.remove("chat-modal-open");
+    };
+  }, [open]);
   const [isTtsEnabled, setIsTtsEnabled] = useState(() => {
     return localStorage.getItem("isTtsEnabled") === "true";
   });
@@ -887,11 +899,15 @@ export default function App() {
         <div className={`chat-widget ${open ? "open" : ""}`} aria-hidden={!open}>
 
           {/* Header */}
-          <div style={styles.widgetHeader}>
+          <div className="chat-widget-header" style={styles.widgetHeader}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={styles.avatar}>🤖</div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 14 }}>CKPCMC Assistant</div>
+                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>CKPCMC Assistant</div>
+                <div style={{ fontSize: 11, opacity: 0.85, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4cd964", display: "inline-block" }}></span>
+                  Online 24×7
+                </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -977,7 +993,7 @@ export default function App() {
 
           {/* Input Row or Survey Form */}
           {!isChatEnded ? (
-            <div style={styles.inputRow}>
+            <div className="chat-input-row" style={styles.inputRow}>
               <input
                 ref={inputRef}
                 className="chat-input"
@@ -988,6 +1004,7 @@ export default function App() {
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage())}
               />
               <button
+                className="chat-input-btn"
                 style={{
                   ...styles.iconBtn,
                   background: isListening ? "linear-gradient(135deg, #c00, #900)" : "rgba(218,16,57,0.08)",
@@ -1002,6 +1019,7 @@ export default function App() {
                 {isListening ? "🛑" : "🎤"}
               </button>
               <button
+                className="chat-input-btn"
                 style={{ ...styles.iconBtn, opacity: !input.trim() || loading ? 0.5 : 1 }}
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || loading}
@@ -1195,9 +1213,9 @@ const styles = {
   inlineFAQ: { background: "white", border: "1px solid rgba(212,175,55,0.2)", padding: "8px 12px", borderRadius: 10, fontSize: 13, textAlign: "left", cursor: "pointer", color: INK },
 
   // Input
-  inputRow: { display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid rgba(0, 0, 0, 0.05)", background: "white", alignItems: "center" },
+  inputRow: { display: "flex", gap: 8, padding: "12px 14px", borderTop: "1px solid rgba(0, 0, 0, 0.05)", background: "white", alignItems: "center", width: "100%", maxWidth: "100%", boxSizing: "border-box" },
   langSelect: { padding: "8px 4px", borderRadius: 16, border: "none", fontSize: 13, fontWeight: "600", background: "rgba(212,175,55,0.08)", color: GOLD, cursor: "pointer", outline: "none" },
-  inputField: { flex: 1, border: "none", outline: "none", fontSize: 14, background: "rgba(0,0,0,0.03)", padding: "10px 14px", borderRadius: 16 },
+  inputField: { flex: 1, minWidth: 0, border: "none", outline: "none", fontSize: 16, background: "rgba(0,0,0,0.03)", padding: "10px 14px", borderRadius: 16, width: "100%", boxSizing: "border-box" },
   iconBtn: { width: 38, height: 38, borderRadius: "50%", background: `linear-gradient(135deg, ${NAVY}, ${ACCENT})`, border: "none", color: "white", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.2s" },
   iconBtnListening: { background: "linear-gradient(135deg, #c00, #900)", animation: "pulse 1.5s infinite" },
 
@@ -1475,36 +1493,102 @@ const globalCSS = `
     transform: translateY(-1px);
   }
 
+  /* Mobile Specific Full-Screen Professional Layout (<768px) */
   @media (max-width: 768px) {
+    /* Hide FAB button when chat is open to avoid visual overlap */
+    .chat-fab.open {
+      display: none !important;
+    }
+
+    .chat-fab {
+      bottom: 16px !important;
+      right: 16px !important;
+      width: 56px !important;
+      height: 56px !important;
+      font-size: 22px !important;
+    }
+
     .chat-container-layout.open, .chat-container-layout.drawer-open {
       position: fixed !important;
-      bottom: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
       right: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      z-index: 10000 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      width: 100dvw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      z-index: 100000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
       gap: 0 !important;
-      transform: translateY(0) scale(1) !important;
+      transform: none !important;
+      border-radius: 0 !important;
     }
+
     .chat-widget {
       position: relative !important;
-      width: 100% !important;
+      width: 100vw !important;
       height: 100% !important;
+      max-height: 100dvh !important;
       border-radius: 0 !important;
       border: none !important;
-      z-index: 10000 !important;
-      backdrop-filter: none !important; /* Remove laggy blur on mobile */
-      background: white !important; /* Solid background for max mobile performance */
+      box-shadow: none !important;
+      z-index: 100000 !important;
+      backdrop-filter: none !important; /* Remove laggy blur on mobile for native 60fps */
+      background: #ffffff !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
+
+    /* Safe Area Insets for Mobile Notch & Bottom Bar */
+    .chat-widget-header {
+      padding-top: max(14px, env(safe-area-inset-top)) !important;
+      padding-left: max(16px, env(safe-area-inset-left)) !important;
+      padding-right: max(16px, env(safe-area-inset-right)) !important;
+    }
+
+    .chat-input-row {
+      width: 100% !important;
+      max-width: 100vw !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      overflow: hidden !important;
+      padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+
     .history-drawer {
       position: absolute !important;
-      left: 0 !important;
       top: 0 !important;
-      width: 100% !important;
+      left: 0 !important;
+      width: 100vw !important;
       height: 100% !important;
       border-radius: 0 !important;
-      z-index: 10001 !important;
+      z-index: 100001 !important;
+    }
+
+    /* Enforce 16px font-size and min-width: 0 on mobile input to prevent auto-zoom and overflow */
+    .chat-input {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      font-size: 16px !important;
+      -webkit-appearance: none !important;
+      box-sizing: border-box !important;
+    }
+
+    .chat-input-btn {
+      flex-shrink: 0 !important;
+    }
+
+    /* Wider bubbles on mobile screens for crisp reading */
+    .user-bubble, .bot-bubble {
+      max-width: 88% !important;
     }
   }
 
@@ -1531,7 +1615,7 @@ const globalCSS = `
     transform: translateY(0) scale(0.98);
   }
 
-  /* Responsive styling for hero card stats */
+  /* Responsive styling for hero section & nav on small screens (<600px) */
   @media (max-width: 600px) {
     .hero-card {
       flex-direction: column !important;
@@ -1545,23 +1629,4 @@ const globalCSS = `
       background: rgba(255, 255, 255, 0.15) !important;
     }
   }
-
-  /* Responsive mobile adjustments for chat widget pruned - consolidated under 768px */
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
 `;
