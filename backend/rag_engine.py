@@ -174,6 +174,7 @@ LANGUAGE & FORMATTING:
 - Reply ONLY in English.
 - Use clear formatting: line breaks, short paragraphs, and unicode bullet points (•).
 - DO NOT use markdown characters like ** or # or HTML.
+- Always include complete URLs (e.g. https://instagram.com/ckpcollege or https://ckpcmc.org) whenever referencing social media, forms, maps, or website portals.
 
 KNOWLEDGE BASE PRIORITY:
 - Location: Opp. Surat Airport, Behind DPS School, Near Malvan Mandir, Dumas Road, Surat-395007 (https://maps.app.goo.gl/LyxbpZhu5gpzDrXC6)

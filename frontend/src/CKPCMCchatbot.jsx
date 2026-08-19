@@ -1,15 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Utility: pretty label for a URL ─────────────────────────────────────────
-function prettyLabel(url) {
+function prettyLabel(rawUrl, customLabel) {
+  if (customLabel && customLabel.trim()) {
+    const trimmed = customLabel.trim();
+    return trimmed.endsWith("↗") ? trimmed : `${trimmed} ↗`;
+  }
+
+  let fullUrl = rawUrl;
+  if (!fullUrl.startsWith("http://") && !fullUrl.startsWith("https://")) {
+    fullUrl = "https://" + fullUrl;
+  }
+
   try {
-    const u = new URL(url);
-    const host = u.hostname.replace("www.", "");
+    const u = new URL(fullUrl);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    const pathname = u.pathname;
+
     if (host.includes("instagram.com")) return "Instagram ↗";
     if (host.includes("facebook.com")) return "Facebook ↗";
     if (host.includes("youtube.com") || host.includes("youtu.be")) {
-      if (u.pathname.startsWith("/watch")) return "Watch on YouTube ↗";
-      if (u.pathname.startsWith("/@")) return "YouTube Channel ↗";
+      if (pathname.startsWith("/watch")) return "Watch on YouTube ↗";
+      if (pathname.startsWith("/@")) return "YouTube Channel ↗";
       return "YouTube ↗";
     }
     if (host.includes("linkedin.com")) return "LinkedIn ↗";
@@ -18,18 +30,20 @@ function prettyLabel(url) {
     if (host.includes("forms.gle") || host.includes("docs.google.com/forms")) return "Open Form ↗";
     if (host.includes("wa.link") || host.includes("whatsapp.com")) return "WhatsApp ↗";
     if (host.includes("ckpcmc.org")) {
-      // Show the path for ckpcmc links
-      const path = u.pathname.replace(/\/$/, "");
-      if (path && path !== "/") return "ckpcmc.org" + path + " ↗";
+      const cleanPath = pathname.replace(/\/$/, "");
+      if (cleanPath && cleanPath !== "/") return `ckpcmc.org${cleanPath} ↗`;
       return "ckpcmc.org ↗";
     }
     if (host.includes("grayquest.com")) return "Pay Fees Online ↗";
+    if (host.includes("mysy.guj.nic.in")) return "MYSY Portal ↗";
+    if (host.includes("vnsgu.ac.in")) return "VNSGU Portal ↗";
     if (host.includes("acpc.gujarat.gov.in")) return "ACPC Portal ↗";
     if (host.includes("gtu.ac.in")) return "GTU Portal ↗";
     if (host.includes("nirfindia.org")) return "NIRF Portal ↗";
-    return host + " ↗";
+
+    return `${host} ↗`;
   } catch {
-    return url.length > 35 ? url.slice(0, 32) + "…" : url;
+    return rawUrl.length > 35 ? rawUrl.slice(0, 32) + "…" : rawUrl;
   }
 }
 
@@ -245,40 +259,96 @@ class SpeechQueueManager {
 
 // ─── Utility: linkify text + render newlines ─────────────────────────────────
 function Linkified({ text }) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
+  if (!text) return null;
+
+  // Master regex matching:
+  // Group 1 & 2: Markdown links [Label](URL)
+  // Group 3: Raw URLs with http(s):// or domain-style URLs (instagram.com/..., facebook.com/..., ckpcmc.org, etc.)
+  const masterRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s\)]*)?)\)|(https?:\/\/[^\s<]+|(?:www\.|[a-zA-Z0-9-]+\.(?:org|com|edu|in|ac\.in|gov\.in|nic\.in|co|net|io|app|gle|link|be))\b(?:\/[^\s<]*)?)/gi;
+
+  const elements = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = masterRegex.exec(text)) !== null) {
+    const matchIndex = match.index;
+
+    // Push preceding plain text
+    if (matchIndex > lastIndex) {
+      elements.push(text.slice(lastIndex, matchIndex));
+    }
+
+    let href = "";
+    let displayLabel = "";
+
+    if (match[1] && match[2]) {
+      displayLabel = match[1];
+      href = match[2];
+    } else if (match[3] || match[0]) {
+      href = match[3] || match[0];
+    }
+
+    // Clean trailing punctuation from raw URLs (e.g. "instagram.com/ckpcollege,")
+    let trailingPunc = "";
+    const puncMatch = href.match(/([.,)!?:]+)$/);
+    if (puncMatch) {
+      trailingPunc = puncMatch[0];
+      href = href.slice(0, -trailingPunc.length);
+    }
+
+    // Prepend https:// if protocol is missing so browser doesn't open relative local 404
+    const fullHref = (href.startsWith("http://") || href.startsWith("https://"))
+      ? href
+      : `https://${href}`;
+
+    const labelText = prettyLabel(href, displayLabel);
+
+    elements.push(
+      <span key={matchIndex}>
+        <a
+          href={fullHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "#da1039",
+            textDecoration: "none",
+            borderBottom: "1.5px solid rgba(218,16,57,0.35)",
+            fontWeight: 600,
+            padding: "1px 4px",
+            borderRadius: "4px",
+            background: "rgba(218,16,57,0.06)",
+            transition: "all 0.15s ease",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2px",
+            wordBreak: "break-all"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(218,16,57,0.14)";
+            e.currentTarget.style.borderBottomColor = "#da1039";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(218,16,57,0.06)";
+            e.currentTarget.style.borderBottomColor = "rgba(218,16,57,0.35)";
+          }}
+        >
+          {labelText}
+        </a>
+        {trailingPunc}
+      </span>
+    );
+
+    lastIndex = matchIndex + match[0].length;
+  }
+
+  // Push remaining plain text after last match
+  if (lastIndex < text.length) {
+    elements.push(text.slice(lastIndex));
+  }
+
   return (
     <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-      {parts.map((part, i) => {
-        if (urlRegex.test(part)) {
-          let cleanUrl = part;
-          let trailingPunc = "";
-          const match = part.match(/([.,)!?]+)$/);
-          if (match) {
-            cleanUrl = part.slice(0, -match[0].length);
-            trailingPunc = match[0];
-          }
-          return (
-            <span key={i}>
-              <a
-                href={cleanUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#1a73e8",
-                  textDecoration: "none",
-                  borderBottom: "1px solid rgba(26,115,232,0.3)",
-                  fontWeight: 500,
-                }}
-              >
-                {prettyLabel(cleanUrl)}
-              </a>
-              {trailingPunc}
-            </span>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
+      {elements.map((el, idx) => (typeof el === "string" ? <span key={idx}>{el}</span> : el))}
     </span>
   );
 }
