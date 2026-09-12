@@ -39,10 +39,10 @@ class Config:
         )
 
     # Model names (all 100% free)
-    GROQ_MODEL        = "llama-3.1-8b-instant"            # Free & ultra-fast on Groq
-    GEMINI_MODEL      = "gemini-2.0-flash"               # Free tier on Google AI Studio
+    GROQ_MODEL        = "llama-3.1-8b-instant"                 # Free & ultra-fast on Groq
+    GEMINI_MODEL      = "gemini-2.0-flash"                    # Free tier on Google AI Studio
     # OpenRouter model slug — use :free suffix for free tier
-    OPENROUTER_MODEL  = "google/gemini-2.0-flash-exp:free" # Free tier on OpenRouter
+    OPENROUTER_MODEL  = "nvidia/nemotron-3.5-lightning:free"   # Verified active free tier model on OpenRouter
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
