@@ -508,6 +508,7 @@ KNOWLEDGE BASE PRIORITY:
 
                 # Gemini may have emitted a partial answer before failing.
                 # The existing frontend already understands the clear event.
+                # pyrefly: ignore [redundant-condition]
                 if full_response:
                     yield {"type": "clear"}
 
