@@ -3,9 +3,10 @@ import numpy as np
 import os
 import time
 import random
-from typing import Any
 from groq import Groq
 from openai import OpenAI          # DeepSeek uses OpenAI-compatible SDK
+from google import genai
+from google.genai import types
 # pyrefly: ignore [missing-import]
 from config import Config
 # pyrefly: ignore [missing-import]
@@ -34,38 +35,25 @@ class RAGEngine:
         self.embedding_model_name = "openai/text-embedding-3-small"
         print("✅ Embedding client ready!")
 
-        # Initialize the active LLM client
-        self.client: Any
-        if Config.ACTIVE_MODEL_PROVIDER == "openrouter":
-            print("🔄 Initializing OpenRouter client...")
-            self.client = OpenAI(
-                api_key=Config.OPENROUTER_API_KEY,
-                base_url=Config.OPENROUTER_BASE_URL,
-                timeout=15.0,
-                default_headers={
-                    "HTTP-Referer": "https://ckpcmc.org",
-                    "X-Title": "CKPCMC Chatbot",
-                },
-            )
-            self.active_model = Config.OPENROUTER_MODEL
-            print(f"✅ OpenRouter client ready! Model: {self.active_model}")
+        # Gemini is primary; Groq is used only after a Gemini generation failure.
+        print("🔄 Initializing Gemini client...")
+        self.gemini_client = genai.Client(api_key=Config.GEMINI_API_KEY)
+        print(f"✅ Gemini client ready! Model: {Config.GEMINI_MODEL}")
 
-        else:
-            print("🔄 Initializing Groq client...")
-            self.client = Groq(api_key=Config.GROQ_API_KEY)
-            self.active_model = Config.GROQ_MODEL
-            print(f"✅ Groq client ready! Model: {self.active_model}")
+        print("🔄 Initializing Groq fallback client...")
+        self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
+        print(f"✅ Groq fallback client ready! Model: {Config.GROQ_MODEL}")
 
         # ── Startup debug banner ──────────────────────────────────────────
-        provider = Config.ACTIVE_MODEL_PROVIDER.upper()
-        icon = {"OPENROUTER": "🟣", "GROQ": "🟢"}.get(provider, "⚪")
         print("")
         print("━" * 55)
-        print(f"  {icon}  ACTIVE PROVIDER : {provider}")
-        print(f"  🤖  MODEL          : {self.active_model}")
-        print(f"  🌡️   TEMPERATURE    : {Config.TEMPERATURE}")
-        print(f"  📦  MAX TOKENS     : {Config.MAX_TOKENS}")
-        print(f"  🔍  EMBEDDING      : {Config.EMBEDDING_MODEL}")
+        print("  🔵  PRIMARY PROVIDER  : GEMINI")
+        print(f"  🤖  PRIMARY MODEL     : {Config.GEMINI_MODEL}")
+        print("  🟢  FALLBACK PROVIDER : GROQ")
+        print(f"  🤖  FALLBACK MODEL    : {Config.GROQ_MODEL}")
+        print(f"  🌡️   TEMPERATURE       : {Config.TEMPERATURE}")
+        print(f"  📦  MAX TOKENS        : {Config.MAX_TOKENS}")
+        print(f"  🔍  EMBEDDING         : {self.embedding_model_name}")
         print("━" * 55)
         print("")
 
@@ -405,6 +393,51 @@ KNOWLEDGE BASE PRIORITY:
 
         return messages, english_suggestions
 
+    def _stream_gemini(self, messages):
+        """Stream Gemini while preserving the existing prompt and chat history."""
+        system_instruction = messages[0]["content"]
+
+        contents = []
+        for message in messages[1:]:
+            role = "model" if message["role"] == "assistant" else "user"
+            contents.append(
+                types.Content(
+                    role=role,
+                    parts=[types.Part(text=message["content"])],
+                )
+            )
+
+        stream = self.gemini_client.models.generate_content_stream(
+            model=Config.GEMINI_MODEL,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=Config.TEMPERATURE,
+                max_output_tokens=Config.MAX_TOKENS,
+            ),
+        )
+
+        for chunk in stream:
+            content = getattr(chunk, "text", None) or ""
+            if content:
+                yield content
+
+    def _stream_groq(self, messages):
+        """Stream Groq with the existing OpenAI-compatible message format."""
+        stream = self.groq_client.chat.completions.create(
+            messages=messages,
+            model=Config.GROQ_MODEL,
+            temperature=Config.TEMPERATURE,
+            max_tokens=Config.MAX_TOKENS,
+            stream=True,
+        )
+
+        for chunk in stream:
+            if chunk.choices:
+                content = getattr(chunk.choices[0].delta, "content", None) or ""
+                if content:
+                    yield content
+
     def generate_response_stream(self, user_input, session_id="default"):
         """Main streaming method to generate chatbot response (English only)."""
         # Update session timestamp and run expired session cleanups
@@ -458,23 +491,33 @@ KNOWLEDGE BASE PRIORITY:
             # Build prompt and get suggestions
             messages, english_suggestions = self._build_prompt_stream(user_input, context, session_id)
 
-            # Call active LLM provider with streaming enabled
+            # Gemini is primary. If it errors or produces no text, retry on Groq.
             start_time = time.time()
-            chat_completion = self.client.chat.completions.create(
-                messages=messages,
-                model=self.active_model,
-                temperature=Config.TEMPERATURE,
-                stream=True
-            )
-
             full_response = ""
-            for chunk in chat_completion:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    content = getattr(delta, "content", None) or ""
-                    if content:
-                        full_response += content
-                        yield {"type": "content", "content": content}
+
+            try:
+                for content in self._stream_gemini(messages):
+                    full_response += content
+                    yield {"type": "content", "content": content}
+
+                if not full_response.strip():
+                    raise RuntimeError("Gemini returned an empty response.")
+
+            except Exception as gemini_error:
+                print(f"⚠️ Gemini failed; switching to Groq fallback: {gemini_error}")
+
+                # Gemini may have emitted a partial answer before failing.
+                # The existing frontend already understands the clear event.
+                if full_response:
+                    yield {"type": "clear"}
+
+                full_response = ""
+                for content in self._stream_groq(messages):
+                    full_response += content
+                    yield {"type": "content", "content": content}
+
+                if not full_response.strip():
+                    raise RuntimeError("Groq returned an empty response.")
 
             generation_time = time.time() - start_time
             response = clean_response(full_response)
