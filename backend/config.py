@@ -45,7 +45,7 @@ class Config:
     OPENROUTER_MODEL = "nvidia/nemotron-3.5-lightning:free"
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-    MAX_TOKENS = 2048
+    MAX_TOKENS = 256
     TEMPERATURE = 0.2
 
     # RAG Configuration

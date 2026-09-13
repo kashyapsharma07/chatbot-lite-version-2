@@ -41,7 +41,11 @@ class RAGEngine:
         print(f"✅ Gemini client ready! Model: {Config.GEMINI_MODEL}")
 
         print("🔄 Initializing Groq fallback client...")
-        self.groq_client = Groq(api_key=Config.GROQ_API_KEY)
+        self.groq_client = Groq(
+            api_key=Config.GROQ_API_KEY,
+            timeout=25.0,
+            max_retries=0,
+        )
         print(f"✅ Groq fallback client ready! Model: {Config.GROQ_MODEL}")
 
         # ── Startup debug banner ──────────────────────────────────────────
@@ -423,13 +427,15 @@ KNOWLEDGE BASE PRIORITY:
                 yield content
 
     def _stream_groq(self, messages):
-        """Stream Groq with the existing OpenAI-compatible message format."""
+        """Stream Groq with a bounded request time."""
         stream = self.groq_client.chat.completions.create(
             messages=messages,
             model=Config.GROQ_MODEL,
             temperature=Config.TEMPERATURE,
-            max_tokens=Config.MAX_TOKENS,
-            stream=True,
+            max_completion_tokens=Config.MAX_TOKENS,
+            reasoning_effort="low",
+            reasoning_format="hidden",
+            stream=True,    
         )
 
         for chunk in stream:
